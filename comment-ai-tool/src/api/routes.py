@@ -15,7 +15,7 @@ router = APIRouter(prefix="/api/v1")
 
 @router.get("/health")
 async def health():
-    return {"status": "ok", "version": "0.1.4", "leads": LeadStore.count()}
+    return {"status": "ok", "version": "0.2.0", "leads": LeadStore.count()}
 
 
 @router.get("/leads")
@@ -81,13 +81,22 @@ async def update_lead_status(lead_id: str, status: str):
 async def analyze_comment(comment: Comment):
     """手动分析单条评论"""
     from src.analyzers.intent_analyzer import IntentAnalyzer
+    from src.analyzers.sentiment import sentiment_analyzer
+
     analyzer = IntentAnalyzer()
     score = await analyzer.analyze(comment)
+    sentiment = sentiment_analyzer.analyze(comment.content)
+
     ScoreStore.save(score)
     AnalysisLogStore.log(comment.content, comment.author_name, comment.platform.value,
                          score.score, score.intent, "")
     logger.info(f"分析: [{score.score:.2f}] {comment.author_name}: {comment.content[:30]}")
-    return score.model_dump()
+
+    return {
+        **score.model_dump(),
+        "sentiment": sentiment.sentiment.value,
+        "sentiment_confidence": sentiment.confidence,
+    }
 
 
 @router.post("/demo/run")
@@ -95,6 +104,7 @@ async def demo_run():
     """演示模式 — 模拟数据跑完整流程"""
     from src.monitors.douyin_monitor import MOCK_COMMENTS
     from src.analyzers.intent_analyzer import IntentAnalyzer
+    from src.analyzers.sentiment import sentiment_analyzer
     from src.repliers.reply_generator import ReplyGenerator
 
     logger.info("Demo 开始")
@@ -104,6 +114,7 @@ async def demo_run():
 
     for comment in MOCK_COMMENTS:
         score = await analyzer.analyze(comment)
+        sentiment = sentiment_analyzer.analyze(comment.content)
         ScoreStore.save(score)
 
         reply = ""
@@ -133,6 +144,8 @@ async def demo_run():
             "intent": score.intent,
             "urgency": score.urgency,
             "keywords": score.keywords,
+            "sentiment": sentiment.sentiment.value,
+            "sentiment_confidence": sentiment.confidence,
             "reply": reply,
             "is_lead": score.score >= 0.5,
         })
@@ -146,6 +159,12 @@ async def demo_run():
         "total_comments": len(MOCK_COMMENTS),
         "leads_found": leads_n,
         "replies_generated": replies_n,
+        "sentiment_summary": {
+            "positive": sum(1 for r in results if r["sentiment"] == "positive"),
+            "negative": sum(1 for r in results if r["sentiment"] == "negative"),
+            "neutral": sum(1 for r in results if r["sentiment"] == "neutral"),
+            "mixed": sum(1 for r in results if r["sentiment"] == "mixed"),
+        },
         "results": results,
     }
 
