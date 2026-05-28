@@ -4,6 +4,7 @@ import logging
 from openai import AsyncOpenAI
 from config.settings import settings
 from src.models.comment import Comment, LeadScore
+from src.analyzers.keyword_engine import keyword_engine
 
 logger = logging.getLogger(__name__)
 
@@ -32,21 +33,7 @@ INTENT_PROMPT = """你是一个短视频评论分析专家。分析以下评论�
 
 
 class IntentAnalyzer:
-    """基于LLM的评论意图分析器，无API key时自动降级为关键词匹配"""
-
-    # 意图关键词库 — 按优先级排序
-    HIGH_INTENT_KEYWORDS = [
-        "怎么买", "多少钱", "价格", "在哪买", "求链接", "想学", "怎么学",
-        "有课程吗", "加微信", "联系方式", "合作", "代理", "报名", "购买",
-        "在哪买", "收费吗", "怎么做", "求带", "收徒", "拜师",
-    ]
-    MEDIUM_INTENT_KEYWORDS = [
-        "有用", "收藏", "太棒了", "干货", "厉害", "学到了", "感谢",
-        "关注了", "已关注", "转了", "分享", "mark", "码住", "太强了",
-    ]
-    SPAM_KEYWORDS = [
-        "互赞", "互关", "互粉", "涨粉", "666666", "路过",
-    ]
+    """基于LLM的评论意图分析器，无API key时使用增强关键词引擎"""
 
     def __init__(self):
         self._has_api_key = bool(settings.ai_api_key and settings.ai_api_key != "your-api-key")
@@ -59,11 +46,10 @@ class IntentAnalyzer:
             logger.info(f"IntentAnalyzer: LLM模式 ({settings.ai_provider}/{self.model})")
         else:
             self.client = None
-            logger.info("IntentAnalyzer: 关键词降级模式 (未配置AI API Key)")
+            logger.info("IntentAnalyzer: 增强关键词模式 (未配置AI API Key)")
 
     async def analyze(self, comment: Comment) -> LeadScore:
         """分析单条评论，返回潜客评分"""
-        # 无API key直接走降级
         if not self._has_api_key:
             return self._keyword_score(comment)
 
@@ -94,46 +80,16 @@ class IntentAnalyzer:
             return self._keyword_score(comment)
 
     def _keyword_score(self, comment: Comment) -> LeadScore:
-        """关键词匹配评分 — 无LLM时的降级方案"""
-        text = comment.content.strip()
-        matched_keywords = []
-        score = 0.1
-        intent = "neutral"
-
-        # 高意向匹配
-        for kw in self.HIGH_INTENT_KEYWORDS:
-            if kw in text:
-                matched_keywords.append(kw)
-
-        if matched_keywords:
-            score = min(0.6 + 0.1 * len(matched_keywords), 1.0)
-            intent = "potential_lead"
-        else:
-            # 中意向匹配
-            for kw in self.MEDIUM_INTENT_KEYWORDS:
-                if kw in text:
-                    matched_keywords.append(kw)
-            if matched_keywords:
-                score = min(0.3 + 0.1 * len(matched_keywords), 0.6)
-                intent = "inquiry"
-            else:
-                # 垃圾评论检测
-                for kw in self.SPAM_KEYWORDS:
-                    if kw in text:
-                        intent = "spam"
-                        score = 0.0
-                        matched_keywords.append(kw)
-                        break
-
-        urgency = "high" if score >= 0.7 else "medium" if score >= 0.4 else "low"
+        """增强关键词评分 — 使用同义词引擎"""
+        result = keyword_engine.analyze(comment.content)
 
         return LeadScore(
             comment_id=comment.id,
-            score=round(score, 2),
-            intent=intent,
-            urgency=urgency,
-            keywords=matched_keywords,
-            reasoning=f"关键词匹配: {matched_keywords}" if matched_keywords else "无匹配关键词",
+            score=result.score,
+            intent=result.intent,
+            urgency=result.urgency,
+            keywords=result.keywords,
+            reasoning=result.reasoning,
         )
 
     async def batch_analyze(self, comments: list[Comment]) -> list[LeadScore]:
