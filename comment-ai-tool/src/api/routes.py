@@ -6,6 +6,8 @@ from fastapi.responses import StreamingResponse
 from typing import Optional
 from src.models.comment import Comment, LeadScore, Lead, Platform
 from src.core.database import LeadStore, ScoreStore, AnalysisLogStore
+from src.core.cache import intent_cache, sentiment_cache
+from src.core.validator import validate_config
 from src.core.logger import logging
 from datetime import datetime
 
@@ -15,7 +17,38 @@ router = APIRouter(prefix="/api/v1")
 
 @router.get("/health")
 async def health():
-    return {"status": "ok", "version": "0.2.0", "leads": LeadStore.count()}
+    """健康检查"""
+    config = validate_config()
+    return {
+        "status": "ok",
+        "version": "0.2.5",
+        "leads": LeadStore.count(),
+        "config_valid": config["valid"],
+        "mode": "llm" if config["config"]["has_api_key"] else "keyword",
+    }
+
+
+@router.get("/config")
+async def get_config():
+    """配置验证"""
+    return validate_config()
+
+
+@router.get("/cache/stats")
+async def cache_stats():
+    """缓存统计"""
+    return {
+        "intent_cache": intent_cache.stats(),
+        "sentiment_cache": sentiment_cache.stats(),
+    }
+
+
+@router.post("/cache/clear")
+async def clear_cache():
+    """清空缓存"""
+    intent_cache.clear()
+    sentiment_cache.clear()
+    return {"ok": True, "message": "缓存已清空"}
 
 
 @router.get("/leads")
@@ -175,4 +208,8 @@ async def get_stats():
     return {
         "total_analyzed": ScoreStore.count(),
         "leads": LeadStore.stats(),
+        "cache": {
+            "intent": intent_cache.stats(),
+            "sentiment": sentiment_cache.stats(),
+        },
     }
