@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>评论AI — 控制台</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --surface2: #242836;
+      --border: #2e3347; --text: #e4e4e7; --text2: #9ca3af;
+      --accent: #6366f1; --accent2: #818cf8; --cyan: #22d3ee;
+      --green: #10b981; --yellow: #f59e0b; --red: #ef4444;
+    }
+    body { font-family: 'SF Pro', -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+    .header { padding: 16px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+    .header h1 { font-size: 18px; font-weight: 700; }
+    .header h1 span { color: var(--cyan); }
+    .header .status { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text2); }
+    .header .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    .main { max-width: 960px; margin: 0 auto; padding: 20px 16px; }
+
+    .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+    .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+    .stat .label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 6px; }
+    .stat .value { font-size: 28px; font-weight: 700; letter-spacing: -1px; }
+    .stat .value.accent { color: var(--accent2); }
+    .stat .value.cyan { color: var(--cyan); }
+    .stat .value.green { color: var(--green); }
+    .stat .value.yellow { color: var(--yellow); }
+
+    .actions { display: flex; gap: 10px; margin-bottom: 20px; }
+    .btn { padding: 9px 18px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s; }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: var(--accent2); }
+    .btn-ghost { background: transparent; color: var(--text2); border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--text); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .feed { display: grid; gap: 12px; }
+
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; animation: slideUp 0.35s ease-out both; }
+    .card:hover { border-color: var(--accent); }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } }
+
+    .card-top { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 10px; }
+    .card-user { display: flex; align-items: center; gap: 10px; }
+    .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; color: white; }
+    .uname { font-size: 13px; font-weight: 600; }
+    .badge { padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+    .badge-high { background: rgba(99,102,241,0.2); color: var(--accent2); }
+    .badge-mid { background: rgba(245,158,11,0.15); color: var(--yellow); }
+    .badge-low { background: rgba(156,163,175,0.1); color: var(--text2); }
+
+    .card-body { padding: 0 16px 12px; }
+    .comment-text { font-size: 14px; line-height: 1.6; margin-bottom: 10px; }
+    .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag { font-size: 10px; padding: 2px 7px; border-radius: 4px; }
+    .tag-intent { background: rgba(99,102,241,0.12); color: var(--accent2); }
+    .tag-urgency { background: rgba(239,68,68,0.12); color: var(--red); }
+    .tag-kw { background: rgba(34,211,238,0.12); color: var(--cyan); }
+
+    .reply { margin: 0 16px 14px; padding: 10px 14px; background: var(--surface2); border-radius: 8px; border-left: 3px solid var(--green); }
+    .reply .label { font-size: 10px; color: var(--green); font-weight: 600; margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .reply .text { font-size: 13px; line-height: 1.5; }
+
+    .empty { text-align: center; padding: 60px 16px; color: var(--text2); }
+    .empty .icon { font-size: 40px; margin-bottom: 12px; }
+    .empty p { font-size: 14px; max-width: 360px; margin: 0 auto; line-height: 1.6; }
+
+    .loading { text-align: center; padding: 48px; color: var(--text2); }
+    .spinner { display: inline-block; width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; margin-bottom: 10px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @media (max-width: 600px) {
+      .stats { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>评论<span>AI</span></h1>
+    <div class="status"><div class="dot"></div> MVP v0.1.1</div>
+  </div>
+
+  <div class="main">
+    <div class="stats">
+      <div class="stat"><div class="label">评论总数</div><div class="value accent" id="sTotal">—</div></div>
+      <div class="stat"><div class="label">识别潜客</div><div class="value cyan" id="sLeads">—</div></div>
+      <div class="stat"><div class="label">生成回复</div><div class="value green" id="sReplies">—</div></div>
+      <div class="stat"><div class="label">潜客率</div><div class="value yellow" id="sRate">—</div></div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" onclick="runDemo()" id="runBtn">▶ 运行演示</button>
+      <button class="btn btn-ghost" onclick="clearAll()">清空</button>
+    </div>
+
+    <div class="feed" id="feed">
+      <div class="empty">
+        <div class="icon">💬</div>
+        <p>点击「运行演示」查看 AI 如何识别评论意图、筛选潜客、生成智能回复</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const colors = ['#6366f1','#22d3ee','#10b981','#f59e0b','#ef4444','#a78bfa','#f472b6','#34d399','#fbbf24','#fb923c'];
+
+    async function runDemo() {
+      const btn = document.getElementById('runBtn');
+      btn.disabled = true;
+      btn.textContent = '⏳ 分析中...';
+      document.getElementById('feed').innerHTML = '<div class="loading"><div class="spinner"></div><div>AI 正在分析评论...</div></div>';
+
+      try {
+        const r = await fetch('/api/v1/demo/run', { method: 'POST' });
+        const d = await r.json();
+
+        document.getElementById('sTotal').textContent = d.total_comments;
+        document.getElementById('sLeads').textContent = d.leads_found;
+        document.getElementById('sReplies').textContent = d.replies_generated;
+        document.getElementById('sRate').textContent = d.total_comments > 0
+          ? Math.round(d.leads_found / d.total_comments * 100) + '%' : '0%';
+
+        const feed = document.getElementById('feed');
+        feed.innerHTML = '';
+
+        d.results.forEach((item, i) => {
+          const card = document.createElement('div');
+          card.className = 'card';
+          card.style.animationDelay = `${i * 0.06}s`;
+
+          const sc = item.score >= 0.7 ? 'badge-high' : item.score >= 0.4 ? 'badge-mid' : 'badge-low';
+          const sl = item.score >= 0.7 ? '🔥 高意向' : item.score >= 0.4 ? '👀 中意向' : '💤 低意向';
+
+          card.innerHTML = `
+            <div class="card-top">
+              <div class="card-user">
+                <div class="avatar" style="background:${colors[i % colors.length]}">${item.author[0]}</div>
+                <div class="uname">${item.author}</div>
+              </div>
+              <div class="badge ${sc}">${sl} ${(item.score * 100).toFixed(0)}分</div>
+            </div>
+            <div class="card-body">
+              <div class="comment-text">${item.comment}</div>
+              <div class="tags">
+                <span class="tag tag-intent">${item.intent}</span>
+                <span class="tag tag-urgency">${item.urgency}</span>
+                ${item.keywords.map(k => `<span class="tag tag-kw">${k}</span>`).join('')}
+              </div>
+            </div>
+            ${item.reply ? `<div class="reply"><div class="label">💬 AI 回复</div><div class="text">${item.reply}</div></div>` : ''}
+          `;
+          feed.appendChild(card);
+        });
+
+      } catch (e) {
+        document.getElementById('feed').innerHTML = `<div class="empty"><div class="icon">⚠️</div><p>${e.message}</p></div>`;
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '▶ 运行演示';
+      }
+    }
+
+    function clearAll() {
+      document.getElementById('feed').innerHTML = '<div class="empty"><div class="icon">💬</div><p>点击「运行演示」开始</p></div>';
+      ['sTotal','sLeads','sReplies','sRate'].forEach(id => document.getElementById(id).textContent = '—');
+    }
+  </script>
+</body>
+</html>

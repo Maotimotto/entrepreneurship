@@ -2,6 +2,7 @@
 from fastapi import APIRouter, HTTPException
 from typing import Optional
 from src.models.comment import Comment, LeadScore, Lead, Platform
+from datetime import datetime
 
 router = APIRouter(prefix="/api/v1")
 
@@ -12,7 +13,7 @@ scores_db: dict[str, LeadScore] = {}
 
 @router.get("/health")
 async def health():
-    return {"status": "ok", "version": "0.1.0-mvp"}
+    return {"status": "ok", "version": "0.1.1"}
 
 
 @router.get("/leads")
@@ -68,6 +69,9 @@ async def demo_run():
     from src.analyzers.intent_analyzer import IntentAnalyzer
     from src.repliers.reply_generator import ReplyGenerator
 
+    # 清空旧数据
+    leads_db.clear()
+
     analyzer = IntentAnalyzer()
     replier = ReplyGenerator()
     results = []
@@ -77,7 +81,7 @@ async def demo_run():
         scores_db[comment.id] = score
 
         reply = ""
-        if score.score >= 0.6:
+        if score.score >= 0.5:
             reply = await replier.generate(comment, score)
 
         # 高分评论自动建档为潜客
@@ -90,6 +94,7 @@ async def demo_run():
                 first_comment_id=comment.id,
                 lead_score=score.score,
                 tags=score.keywords,
+                created_at=datetime.now(),
             )
             leads_db[lead.id] = lead
 
@@ -98,6 +103,8 @@ async def demo_run():
             "author": comment.author_name,
             "score": score.score,
             "intent": score.intent,
+            "urgency": score.urgency,
+            "keywords": score.keywords,
             "reply": reply,
             "is_lead": score.score >= 0.5,
         })
@@ -107,5 +114,6 @@ async def demo_run():
     return {
         "total_comments": len(MOCK_COMMENTS),
         "leads_found": sum(1 for r in results if r["is_lead"]),
+        "replies_generated": sum(1 for r in results if r["reply"]),
         "results": results,
     }
