@@ -6,7 +6,7 @@
   <title>评论AI — 控制台</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
-    :root{--bg:#0f1117;--s1:#1a1d27;--s2:#242836;--bd:#2e3347;--t1:#e4e4e7;--t2:#9ca3af;--a1:#6366f1;--a2:#818cf8;--cy:#22d3ee;--gn:#10b981;--yl:#f59e0b;--rd:#ef4444;--pk:#f472b6}
+    :root{--bg:#0f1117;--s1:#1a1d27;--s2:#242836;--bd:#2e3347;--t1:#e4e4e7;--t2:#9ca3af;--a1:#6366f1;--a2:#818cf8;--cy:#22d3ee;--gn:#10b981;--yl:#f59e0b;--rd:#ef4444;--pk:#f472b6;--or:#fb923c}
     body{font-family:'SF Pro',-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--t1);min-height:100vh}
 
     .hdr{padding:14px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
@@ -53,10 +53,11 @@
     .cu{display:flex;align-items:center;gap:8px}
     .av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff}
     .un{font-size:12px;font-weight:600}
-    .badges{display:flex;gap:6px;align-items:center}
+    .badges{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
     .bd{padding:2px 7px;border-radius:999px;font-size:10px;font-weight:700}
     .bd-h{background:rgba(99,102,241,.2);color:var(--a2)}.bd-m{background:rgba(245,158,11,.15);color:var(--yl)}.bd-l{background:rgba(156,163,175,.1);color:var(--t2)}
     .bd-pos{background:rgba(16,185,129,.15);color:var(--gn)}.bd-neg{background:rgba(239,68,68,.15);color:var(--rd)}.bd-neu{background:rgba(156,163,175,.1);color:var(--t2)}
+    .bd-cat{background:rgba(34,211,238,.15);color:var(--cy)}
 
     .cb{padding:0 14px 10px}
     .ct-text{font-size:13px;line-height:1.55;margin-bottom:8px}
@@ -65,6 +66,7 @@
     .tg-i{background:rgba(99,102,241,.12);color:var(--a2)}
     .tg-u{background:rgba(239,68,68,.12);color:var(--rd)}
     .tg-k{background:rgba(34,211,238,.12);color:var(--cy)}
+    .tg-cat{background:rgba(251,146,60,.12);color:var(--or)}
 
     .rp{margin:0 14px 12px;padding:8px 12px;background:var(--s2);border-radius:6px;border-left:2px solid var(--gn)}
     .rp .lb{font-size:9px;color:var(--gn);font-weight:600;margin-bottom:2px;text-transform:uppercase;letter-spacing:.4px}
@@ -84,16 +86,18 @@
 <body>
   <div class="hdr">
     <h1>评论<span>AI</span></h1>
-    <div class="st"><div class="dot"></div> v0.2.1</div>
+    <div class="st"><div class="dot"></div> v0.3.0</div>
   </div>
 
   <div class="wrap">
     <div class="flow">
       <div class="flow-step"><div class="icon">📱</div>评论采集</div>
       <div class="flow-arrow">→</div>
-      <div class="flow-step"><div class="icon">🧠</div>AI意图分析</div>
+      <div class="flow-step"><div class="icon">🧠</div>意图识别</div>
       <div class="flow-arrow">→</div>
       <div class="flow-step"><div class="icon">❤️</div>情感分析</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step"><div class="icon">🏷️</div>潜客分类</div>
       <div class="flow-arrow">→</div>
       <div class="flow-step"><div class="icon">💬</div>智能回复</div>
       <div class="flow-arrow">→</div>
@@ -120,7 +124,7 @@
     </div>
 
     <div class="feed" id="fd">
-      <div class="empty"><div class="ic">💬</div><p>点击「运行演示」查看 AI 如何识别评论意图、分析情感、筛选潜客</p></div>
+      <div class="empty"><div class="ic">💬</div><p>点击「运行演示」查看 AI 如何识别意图、分析情感、分类潜客</p></div>
     </div>
   </div>
 
@@ -129,6 +133,7 @@
 
     function sentLabel(s){return{positive:'😊 正面',negative:'😤 负面',neutral:'😐 中性',mixed:'🤔 混合'}[s]||s}
     function sentClass(s){return{positive:'bd-pos',negative:'bd-neg',neutral:'bd-neu',mixed:'bd-m'}[s]||'bd-neu'}
+    function catLabel(c){return{buyer:'🛒 购买',learner:'📚 学习',partner:'🤝 合作',inquirer:'❓ 咨询',follower:'👀 关注',spam:'🚫 垃圾'}[c]||c}
 
     async function run(){
       const b=document.getElementById('rBtn');b.disabled=true;b.textContent='⏳ 分析中...';
@@ -140,7 +145,6 @@
         document.getElementById('sR').textContent=d.replies_generated;
         document.getElementById('sP').textContent=d.total_comments?Math.round(d.leads_found/d.total_comments*100)+'%':'0%';
 
-        // 情感统计
         if(d.sentiment_summary){
           document.getElementById('sentBar').style.display='flex';
           document.getElementById('sPos').textContent=d.sentiment_summary.positive||0;
@@ -159,10 +163,11 @@
               <div class="cu"><div class="av" style="background:${C[i%10]}">${x.author[0]}</div><div class="un">${x.author}</div></div>
               <div class="badges">
                 <div class="bd ${sentClass(x.sentiment)}">${sentLabel(x.sentiment)}</div>
+                ${x.category?`<div class="bd bd-cat">${catLabel(x.category)}</div>`:''}
                 <div class="bd ${sc}">${sl} ${(x.score*100).toFixed(0)}分</div>
               </div>
             </div>
-            <div class="cb"><div class="ct-text">${x.comment}</div><div class="tags"><span class="tg tg-i">${x.intent}</span><span class="tg tg-u">${x.urgency}</span>${x.keywords.map(k=>`<span class="tg tg-k">${k}</span>`).join('')}</div></div>
+            <div class="cb"><div class="ct-text">${x.comment}</div><div class="tags"><span class="tg tg-i">${x.intent}</span><span class="tg tg-u">${x.urgency}</span>${x.keywords.map(k=>`<span class="tg tg-k">${k}</span>`).join('')}${x.category?`<span class="tg tg-cat">${x.category}</span>`:''}</div></div>
             ${x.reply?`<div class="rp"><div class="lb">💬 AI 回复</div><div class="tx">${x.reply}</div></div>`:''}`;
           f.appendChild(el);
         });
