@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2026 单人轻资产创业方案 — 深度调研报告</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-warm: #f6f5f4;
+      --text: rgba(0,0,0,0.95);
+      --text-secondary: #615d59;
+      --text-muted: #a39e98;
+      --accent: #0075de;
+      --accent-hover: #005bab;
+      --accent-bg: #f2f9ff;
+      --border: rgba(0,0,0,0.1);
+      --success: #1aae39;
+      --warning: #dd5b00;
+      --danger: #d9292a;
+      --teal: #2a9d99;
+      --purple: #6c5ce7;
+      --shadow-card: rgba(0,0,0,0.04) 0px 4px 18px, rgba(0,0,0,0.027) 0px 2px 8px, rgba(0,0,0,0.02) 0px 0.8px 3px;
+      --shadow-deep: rgba(0,0,0,0.01) 0px 1px 3px, rgba(0,0,0,0.02) 0px 3px 7px, rgba(0,0,0,0.02) 0px 7px 15px, rgba(0,0,0,0.04) 0px 14px 28px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Noto Sans SC', 'Inter', system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ===== NAV ===== */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(255,255,255,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+    }
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+    }
+    .nav-logo {
+      font-weight: 700;
+      font-size: 18px;
+      letter-spacing: -0.5px;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .nav-links {
+      display: flex;
+      gap: 4px;
+      list-style: none;
+      overflow-x: auto;
+    }
+    .nav-links a {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      text-decoration: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .nav-links a:hover, .nav-links a.active {
+      color: var(--text);
+      background: var(--bg-warm);
+    }
+
+    /* ===== HERO ===== */
+    .hero {
+      padding: 80px 24px 64px;
+      text-align: center;
+      background: linear-gradient(180deg, var(--bg-warm) 0%, var(--bg) 100%);
+    }
+    .hero-badge {
+      display: inline-block;
+      background: var(--accent-bg);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 20px;
+      letter-spacing: 0.5px;
+    }
+    .hero h1 {
+      font-size: clamp(32px, 5vw, 52px);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -1.5px;
+      margin-bottom: 16px;
+    }
+    .hero p {
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 640px;
+      margin: 0 auto 32px;
+      line-height: 1.5;
+    }
+    .hero-profile {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 20px;
+      box-shadow: var(--shadow-card);
+    }
+    .hero-profile .avatar {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--purple));
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 700; font-size: 16px;
+    }
+    .hero-profile .info { text-align: left; }
+    .hero-profile .info .name { font-weight: 600; font-size: 15px; }
+    .hero-profile .info .detail { font-size: 13px; color: var(--text-secondary); }
+
+    /* ===== CONTAINER ===== */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ===== SECTIONS ===== */
+    section {
+      padding: 64px 0;
+    }
+    section:nth-child(even) {
+      background: var(--bg-warm);
+    }
+    .section-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 8px;
+    }
+    .section-title {
+      font-size: clamp(28px, 4vw, 40px);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -1px;
+      margin-bottom: 12px;
+    }
+    .section-desc {
+      font-size: 16px;
+      color: var(--text-secondary);
+      max-width: 640px;
+      margin-bottom: 40px;
+    }
+
+    /* ===== CARDS ===== */
+    .card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 28px;
+      box-shadow: var(--shadow-card);
+      transition: box-shadow 0.25s, transform 0.25s;
+    }
+    .card:hover {
+      box-shadow: var(--shadow-deep);
+      transform: translateY(-2px);
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .card-icon {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .card-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      line-height: 1.2;
+    }
+    .card-subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* ===== STATS GRID ===== */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+    .stat-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: -1px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .stat-label {
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    /* ===== PROJECT CARDS ===== */
+    .projects-grid {
+      display: grid;
+      gap: 24px;
+    }
+    .project-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: var(--shadow-card);
+      transition: box-shadow 0.3s, transform 0.3s;
+    }
+    .project-card:hover {
+      box-shadow: var(--shadow-deep);
+      transform: translateY(-3px);
+    }
+    .project-banner {
+      height: 6px;
+      width: 100%;
+    }
+    .project-content {
+      padding: 32px;
+    }
+    .project-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .project-rank {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+    .rank-s { background: #fff3e0; color: #e65100; }
+    .rank-a { background: #e8f5e9; color: #2e7d32; }
+    .rank-b { background: #e3f2fd; color: #1565c0; }
+
+    .project-title {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 6px;
+    }
+    .project-tagline {
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .metric {
+      background: var(--bg-warm);
+      border-radius: 8px;
+      padding: 14px;
+      text-align: center;
+    }
+    .metric-value {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+    .metric-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    /* ===== TIMELINE ===== */
+    .timeline {
+      position: relative;
+      padding-left: 28px;
+      margin: 24px 0;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 8px;
+      bottom: 8px;
+      width: 2px;
+      background: var(--border);
+    }
+    .timeline-item {
+      position: relative;
+      margin-bottom: 20px;
+    }
+    .timeline-item:last-child { margin-bottom: 0; }
+    .timeline-dot {
+      position: absolute;
+      left: -24px;
+      top: 6px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      background: var(--bg);
+    }
+    .timeline-item.active .timeline-dot {
+      background: var(--accent);
+    }
+    .timeline-title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .timeline-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* ===== TABS ===== */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 24px;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0;
+      overflow-x: auto;
+    }
+    .tab-btn {
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+      font-family: inherit;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ===== COLLAPSIBLE ===== */
+    .collapsible-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 16px 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+      font-family: inherit;
+      border-bottom: 1px solid var(--border);
+    }
+    .collapsible-toggle .arrow {
+      transition: transform 0.25s;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+    .collapsible-toggle.open .arrow {
+      transform: rotate(180deg);
+    }
+    .collapsible-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.4s ease;
+    }
+    .collapsible-content.open {
+      max-height: 2000px;
+    }
+    .collapsible-body {
+      padding: 20px 0;
+    }
+
+    /* ===== COMPARISON TABLE ===== */
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 14px;
+    }
+    .comparison-table th {
+      background: var(--bg-warm);
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    .comparison-table td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .comparison-table tr:hover td {
+      background: var(--bg-warm);
+    }
+
+    /* ===== RISK INDICATOR ===== */
+    .risk-bar {
+      display: flex;
+      gap: 3px;
+      margin: 4px 0;
+    }
+    .risk-segment {
+      height: 6px;
+      flex: 1;
+      border-radius: 3px;
+      background: #e0e0e0;
+    }
+    .risk-segment.filled { background: var(--warning); }
+    .risk-segment.filled.low { background: var(--success); }
+    .risk-segment.filled.high { background: var(--danger); }
+
+    /* ===== ACTION PLAN ===== */
+    .action-list {
+      list-style: none;
+      counter-reset: action;
+    }
+    .action-item {
+      display: flex;
+      gap: 16px;
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+    }
+    .action-item:last-child { border-bottom: none; }
+    .action-number {
+      counter-increment: action;
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: white;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+    .action-content h4 {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .action-content p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+    .action-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-top: 6px;
+    }
+    .tag-urgent { background: #fce4ec; color: #c62828; }
+    .tag-soon { background: #fff3e0; color: #e65100; }
+    .tag-plan { background: #e8f5e9; color: #2e7d32; }
+
+    /* ===== FOOTER ===== */
+    footer {
+      padding: 40px 24px;
+      border-top: 1px solid var(--border);
+      text-align: center;
+    }
+    footer p {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .hero { padding: 48px 20px 40px; }
+      section { padding: 40px 0; }
+      .project-content { padding: 24px 20px; }
+      .metrics-row { grid-template-columns: 1fr 1fr; }
+      .nav-links { display: none; }
+      .comparison-table { font-size: 12px; }
+      .comparison-table th, .comparison-table td { padding: 8px 10px; }
+    }
+
+    /* ===== ANIMATIONS ===== */
+    .fade-in {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .fade-in.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ===== PROGRESS BAR ===== */
+    .progress-bar {
+      height: 8px;
+      background: #e0e0e0;
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      transition: width 1s ease;
+    }
+
+    /* ===== TOOLTIP ===== */
+    .tooltip {
+      position: relative;
+      cursor: help;
+      border-bottom: 1px dashed var(--text-muted);
+    }
+    .tooltip::after {
+      content: attr(data-tip);
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #31302e;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      white-space: nowrap;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s;
+      margin-bottom: 6px;
+    }
+    .tooltip:hover::after { opacity: 1; }
+
+    /* ===== CUSTOM SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="nav-logo">📊 创业调研报告</a>
+    <ul class="nav-links">
+      <li><a href="#overview" class="active">概览</a></li>
+      <li><a href="#projects">项目方案</a></li>
+      <li><a href="#comparison">对比分析</a></li>
+      <li><a href="#resources">杭州资源</a></li>
+      <li><a href="#action">行动计划</a></li>
+      <li><a href="#risks">风险提示</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-badge">2026 · 深度调研报告</div>
+  <h1>单人轻资产创业方案</h1>
+  <p>基于真实市场数据，为 AI 开发者量身定制的 0-1 创业路径。拒绝空谈，只讲可执行的方案。</p>
+  <div class="hero-profile">
+    <div class="avatar">P</div>
+    <div class="info">
+      <div class="name">调研对象画像</div>
+      <div class="detail">25岁 · AI应用开发工程师 · 杭州 · 启动资金 ¥10,000</div>
+    </div>
+  </div>
+</div>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <div class="container">
+    <div class="section-label fade-in">市场概览</div>
+    <h2 class="section-title fade-in">2025-2026 AI 单人创业环境</h2>
+    <p class="section-desc fade-in">基于 36kr、知乎、Reddit、TechNode 等多源调研，以下是当前市场的真实面貌。</p>
+
+    <div class="stats-grid fade-in">
+      <div class="stat-card">
+        <div class="stat-value" style="color: var(--accent);">73%</div>
+        <div class="stat-label">中国中小企业尚未导入 AI</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color: var(--success);">¥1-5万</div>
+        <div class="stat-label">单人AI服务月收入中位数</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color: var(--warning);">80%+</div>
+        <div class="stat-label">AI 副业项目 6 个月内放弃</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color: var(--teal);">DeepSeek</div>
+        <div class="stat-label">API 成本降低 90% 的关键变量</div>
+      </div>
+    </div>
+
+    <div class="card fade-in" style="margin-bottom: 24px;">
+      <div class="card-header">
+        <div class="card-icon" style="background: #fff3e0;">⚡</div>
+        <div>
+          <div class="card-title">关键发现</div>
+          <div class="card-subtitle">调研中最重要的 5 个结论</div>
+        </div>
+      </div>
+      <ol style="padding-left: 20px; line-height: 2; font-size: 15px;">
+        <li><strong>AI 工具链成熟了</strong>：Coze、Dify、FastGPT 等平台让非程序员也能搭建 AI 应用，但<strong>懂开发的人有明显优势</strong>。</li>
+        <li><strong>"卖课"比"卖服务"更赚钱</strong>：知识付费的边际成本几乎为零，但需要先有真实项目经验背书。</li>
+        <li><strong>信息差正在缩小</strong>：2024 年的 AI 蓝海到 2025 年已变红海，纯套壳应用几乎没有机会。</li>
+        <li><strong>垂直细分是唯一出路</strong>：做"XX行业+AI"比做"AI工具"更容易成功。</li>
+        <li><strong>案例数据可信度低</strong>：网上月入 10 万+ 的案例 90% 以上是卖课/营销内容，真实独立验证的极少。</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- YOUR ADVANTAGES -->
+<section>
+  <div class="container">
+    <div class="section-label fade-in">个人优势分析</div>
+    <h2 class="section-title fade-in">你的竞争力在哪</h2>
+    <p class="section-desc fade-in">抛开焦虑，先看清自己手里有什么牌。</p>
+
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;" class="fade-in">
+      <div class="card">
+        <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--success);">✅ 你的优势</h3>
+        <ul style="list-style: none; line-height: 2.2; font-size: 14px;">
+          <li>🎯 AI 应用开发能力 — 能直接交付产品，不需要外包</li>
+          <li>🏙️ 杭州 — AI 创业政策最好的城市之一</li>
+          <li>🧠 25 岁 — 时间成本低，试错空间大</li>
+          <li>💻 技术背景 — 能看穿"AI项目"的真伪</li>
+          <li>📍 没有人脉 — 反而没有社交负担，可以纯线上获客</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 16px; color: var(--danger);">⚠️ 你的限制</h3>
+        <ul style="list-style: none; line-height: 2.2; font-size: 14px;">
+          <li>💰 ¥10,000 预算 — 只能选零成本或极低成本启动的项目</li>
+          <li>⏰ 在职状态 — 每天可用时间 3-5 小时</li>
+          <li>🤝 没有人脉 — 初期获客全靠内容和平台</li>
+          <li>📊 没有行业经验 — 需要快速选定一个垂直领域深耕</li>
+          <li>🏗️ 缺少商业经验 — 需要边做边学销售和运营</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects">
+  <div class="container">
+    <div class="section-label fade-in">核心方案</div>
+    <h2 class="section-title fade-in">4 个推荐项目方案</h2>
+    <p class="section-desc fade-in">按可行性排序。每个方案都基于你的具体背景定制，不是通用模板。</p>
+
+    <div class="projects-grid">
+
+      <!-- PROJECT 1 -->
+      <div class="project-card fade-in">
+        <div class="project-banner" style="background: linear-gradient(90deg, #0075de, #2a9d99);"></div>
+        <div class="project-content">
+          <div class="project-top">
+            <div>
+              <div class="project-title">AI 工作流自动化服务</div>
+              <div class="project-tagline">帮本地中小企业用 AI 提升效率，从"卖时间"到"卖系统"</div>
+            </div>
+            <span class="project-rank rank-s">🏆 最推荐</span>
+          </div>
+
+          <div class="metrics-row">
+            <div class="metric">
+              <div class="metric-value" style="color: var(--accent);">¥0</div>
+              <div class="metric-label">启动成本</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value" style="color: var(--success);">3-6月</div>
+              <div class="metric-label">达到月入1万</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value" style="color: var(--warning);">中</div>
+              <div class="metric-label">竞争程度</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value" style="color: var(--teal);">高</div>
+              <div class="metric-label">天花板</div>
+            </div>
+          </div>
+
+          <p style="font-size: 15px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.6;">
+            <strong>为什么适合你：</strong>你有 AI 开发能力，能直接交付产品。杭州本地有大量电商、餐饮、教培中小企业需要 AI 自动化但不知道怎么做。你不需要卖课、不需要囤货，只需要帮他们解决问题。
+          </p>
+
+          <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab(this, 'p1-start')">启动期</button>
+            <button class="tab-btn" onclick="switchTab(this, 'p1-grow')">成长期</button>
+            <button class="tab-btn" onclick="switchTab(this, 'p1-scale')">突破期</button>
+            <button class="tab-btn" onclick="switchTab(this, 'p1-tools')">工具栈</button>
+          </div>
+
+          <div id="p1-start" class="tab-panel active">
+            <div class="timeline">
+              <div class="timeline-item active">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title">第 1-2 周：选定垂直领域</div>
+                <div class="timeline-desc">不要做通用型工具。选一个你最熟悉的行业（建议从电商开始，杭州电商生态最成熟）。走访 3-5 家店铺，了解他们最痛的重复工作。</div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title">第 3-4 周：做出第一个 MVP</div>
+                <div class="timeline-desc">用 Coze/Dify + DeepSeek API 搭建一个最小可用的自动化工作流。比如：电商客服自动回复、评价自动分析、商品描述自动生成。</div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title">第 5-8 周：免费给 3 家店用</div>
+                <div class="timeline-desc">免费部署，收集效果数据。重点记录：节省了多少时间、提升了多少转化率。这些数据就是你后续收费的依据。</div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title">第 9-12 周：开始收费</div>
+                <div class="timeline-desc">基于效果数据定价。基础自动化 ¥500-1500/月/店，全流程自动化 ¥2000-5000/月/店。目标：5 个付费客户 = 月入 ¥5000-15000。</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="p1-grow" class="tab-panel">
+            <div class="timeline">
+              <div class="timeline-item active">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title">月入 1-3 万：标准化产品</div>
+                <div class="timeline-desc">把服务过的案例整理成标准化解决方案。比如"电商客服 AI 助手"、"餐饮评价自动管理系统"。降低交付成本，提高利润率。</div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title">月入 3-5 万：内容获客</div>
+                <div class="timeline-desc">在小红书/抖音发"XX行业自动化"的案例视频。展示前后对比效果。引流到微信，用真实案例转化。每月目标：新增 3-5 个付费客户。</div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title">月入 5 万+：叠加高客单价服务</div>
+                <div class="timeline-desc">针对大客户做全流程 AI 改造，客单价 ¥5000-20000。同时维护老客户的月费收入，形成持续现金流。</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="p1-scale" class="tab-panel">
+            <div class="timeline">
+              <div class="timeline-item active">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title">SaaS 化</div>
+                <div class="timeline-desc">把标准化产品做成轻量 SaaS（用低代码平台搭建）。月费模式：¥99-299/月/账号。200 个付费用户 = 月被动收入 2-6 万。</div>
+              </div>
+              <div class="timeline-item">
+                <div class="timeline-dot"></div>
+                <div class="timeline-title">合伙人模式</div>
+                <div class="timeline-desc">培训兼职人员帮你执行基础部署工作，你负责核心开发和客户管理。分成比例 5:5 或 6:4。</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="p1-tools" class="tab-panel">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+              <div class="metric" style="text-align: left;">
+                <div style="font-weight: 600; font-size: 14px;">🤖 AI 平台</div>
+                <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Coze（扣子）、Dify、FastGPT</div>
+              </div>
+              <div class="metric" style="text-align: left;">
+                <div style="font-weight: 600; font-size: 14px;">🧠 模型 API</div>
+                <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">DeepSeek（最便宜）、通义千问、智谱</div>
+              </div>
+              <div class="metric" style="text-align: left;">
+                <div style="font-weight: 600; font-size: 14px;">🔧 自动化</div>
+                <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">Make.com、影刀 RPA、n8n</div>
+              </div>
+              <div class="metric" style="text-align: left;">
+                <div style="font-weight: 600; font-size: 14px;">📱 获客</div>
+                <div style="font-size: 13px; color: var(--text-secondary); margin-top: 4px;">小红书、抖音、微信公众号</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROJECT 2 -->
+      <div class="project-card fade-in">
+        <div class="project-banner" style="background: linear-gradient(90deg, #6c5ce7, #a29bfe);"></div>
+        <div class="project-content">
+          <div class="project-top">
+            <div>
+              <div class="project-title">垂直领域 AI 知识付费</div>
+              <div class="project-tagline">把你的 AI 实战经验变成可复制的数字产品</div>
+            </div>
+            <span class="project-rank rank-a">✅ 推荐</span>
+          </div>
+
+          <div class="metrics-row">
+            <div class="metric">
+              <div class="metric-value" style="color: var(--accent);">¥500</div>
+              <div class="metric-label">启动成本</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value" style="color: var(--success);">3-6月</div>
+              <div class="metric-label">达到月入1万</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value" style="color: var(--danger);">高</div>
+              <div class="metric-label">竞争程度</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value" style="color: var(--teal);">高</div>
+              <div class="metric-label">天花板</div>
+            </div>
+          </div>
+
+          <p style="font-size: 15px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.6;">
+            <strong>为什么适合你：</strong>你有真实的 AI 开发经验，不是纸上谈兵。但<strong>强烈建议先做项目 1 收集案例</strong>，再用真实案例做知识付费。没有实战背书的"AI课程"已经严重内卷。
+          </p>
+
+          <button class="collapsible-toggle" onclick="toggleCollapsible(this)">
+            <span>详细方案</span>
+            <span class="arrow">▼</span>
+          </button>
+          <div class="collapsible-content">
+            <div class="collapsible-body">
+              <div class="timeline">
+                <div class="timeline-item active">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">前提：先有 3+ 个真实案例</div>
+                  <div class="timeline-desc">不要裸做知识付费。先通过项目 1 积累真实的服务案例和效果数据。这些就是你课程的核心内容。</div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">低价引流课：¥99/人</div>
+                  <div class="timeline-desc">10 节短视频课，讲"如何用 AI 工具帮 XX 行业提效"。用你的真实案例做素材。在小红书/抖音发干货引流。</div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">高价训练营：¥1980/人</div>
+                  <div class="timeline-desc">21 天线上训练营，手把手教学员搭建 AI 自动化工作流。每月招 10-20 人 = 月入 2-4 万。</div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">私域 + 咨询：¥999/小时</div>
+                  <div class="timeline-desc">针对学员的个性化问题提供 1 对 1 咨询。复购率高，客单价高。</div>
+                </div>
+              </div>
+              <div style="background: #fff3e0; border-radius: 8px; padding: 16px; margin-top: 16px; font-size: 14px;">
+                <strong>⚠️ 重要提醒：</strong>知识付费的核心壁垒是<strong>真实案例 + 个人品牌</strong>。没有案例支撑的"AI课程"在 2025 年已经很难卖了。建议先做项目 1 至少 3 个月，再启动知识付费。
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROJECT 3 -->
+      <div class="project-card fade-in">
+        <div class="project-banner" style="background: linear-gradient(90deg, #2a9d99, #00b894);"></div>
+        <div class="project-content">
+          <div class="project-top">
+            <div>
+              <div class="project-title">AI 开发者外包接单</div>
+              <div class="project-tagline">在专业平台接 AI 应用开发项目，积累客户和案例</div>
+            </div>
+            <span class="project-rank rank-a">✅ 推荐</span>
+          </div>
+
+          <div class="metrics-row">
+            <div class="metric">
+              <div class="metric-value" style="color: var(--accent);">¥0</div>
+              <div class="metric-label">启动成本</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value" style="color: var(--success);">1-3月</div>
+              <div class="metric-label">达到月入1万</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value" style="color: var(--warning);">中高</div>
+              <div class="metric-label">竞争程度</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value" style="color: var(--text-muted);">中</div>
+              <div class="metric-label">天花板</div>
+            </div>
+          </div>
+
+          <p style="font-size: 15px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.6;">
+            <strong>为什么适合你：</strong>最快的变现路径。你有 AI 开发能力，可以直接接单赚钱。缺点是收入和时间挂钩，但可以作为启动阶段的现金流来源，同时积累项目经验。
+          </p>
+
+          <button class="collapsible-toggle" onclick="toggleCollapsible(this)">
+            <span>详细方案</span>
+            <span class="arrow">▼</span>
+          </button>
+          <div class="collapsible-content">
+            <div class="collapsible-body">
+              <h4 style="font-size: 15px; margin-bottom: 12px;">推荐接单平台</h4>
+              <table class="comparison-table">
+                <thead>
+                  <tr><th>平台</th><th>类型</th><th>客单价</th><th>特点</th></tr>
+                </thead>
+                <tbody>
+                  <tr><td><strong>电鸭社区</strong></td><td>远程工作</td><td>¥5000-30000</td><td>质量高，AI 岗位多</td></tr>
+                  <tr><td><strong>程序员客栈</strong></td><td>外包接单</td><td>¥3000-50000</td><td>AI 项目需求旺盛</td></tr>
+                  <tr><td><strong>猪八戒网</strong></td><td>综合外包</td><td>¥1000-20000</td><td>量大，需要筛选客户</td></tr>
+                  <tr><td><strong>Upwork</strong></td><td>国际平台</td><td>$500-5000</td><td>赚美元，AI 需求爆发</td></tr>
+                  <tr><td><strong>GitHub/开源</strong></td><td>被动获客</td><td>不定</td><td>发 AI 项目吸引客户主动找你</td></tr>
+                </tbody>
+              </table>
+              <div style="margin-top: 16px; font-size: 14px; color: var(--text-secondary);">
+                <strong>策略：</strong>接单的同时，把通用需求做成可复用的模板/工具。比如做了 3 个电商客服 AI，第 4 个只需要 1/3 的时间。逐步降低时间投入，提高时薪。
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROJECT 4 -->
+      <div class="project-card fade-in">
+        <div class="project-banner" style="background: linear-gradient(90deg, #dd5b00, #fdcb6e);"></div>
+        <div class="project-content">
+          <div class="project-top">
+            <div>
+              <div class="project-title">利基市场跨境电商 + AI</div>
+              <div class="project-tagline">用 AI 工具做选品、铺货、客服，赚信息差和汇率差</div>
+            </div>
+            <span class="project-rank rank-b">💡 备选</span>
+          </div>
+
+          <div class="metrics-row">
+            <div class="metric">
+              <div class="metric-value" style="color: var(--accent);">¥3000+</div>
+              <div class="metric-label">启动成本</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value" style="color: var(--success);">3-6月</div>
+              <div class="metric-label">达到月入1万</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value" style="color: var(--danger);">高</div>
+              <div class="metric-label">竞争程度</div>
+            </div>
+            <div class="metric">
+              <div class="metric-value" style="color: var(--teal);">高</div>
+              <div class="metric-label">天花板</div>
+            </div>
+          </div>
+
+          <p style="font-size: 15px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.6;">
+            <strong>为什么是备选：</strong>需要一定的启动资金和学习成本，且跨境电商平台规则变化快。但如果你对电商有兴趣，这是一个天花板很高的方向。调研发现大量"月入 10 万+"的案例来自营销内容，真实可验证的数据很少。
+          </p>
+
+          <button class="collapsible-toggle" onclick="toggleCollapsible(this)">
+            <span>详细方案</span>
+            <span class="arrow">▼</span>
+          </button>
+          <div class="collapsible-content">
+            <div class="collapsible-body">
+              <div class="timeline">
+                <div class="timeline-item active">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">选平台：Shopee / TikTok Shop</div>
+                  <div class="timeline-desc">东南亚市场门槛最低，适合新手。Shopee 支持一件代发，无需囤货。TikTok Shop 正在爆发期。</div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">AI 选品 + 铺货</div>
+                  <div class="timeline-desc">用 AI 分析热销品类，找"销量不错但评价差"的产品（改进空间大）。AI 生成多语言商品标题和描述。批量上架测试。</div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot"></div>
+                  <div class="timeline-title">AI 客服 + 运营</div>
+                  <div class="timeline-desc">用 AI 做多语言客服自动回复。AI 生成短视频素材做 TikTok 推广。逐步聚焦 1-2 个利基品类。</div>
+                </div>
+              </div>
+              <div style="background: #fce4ec; border-radius: 8px; padding: 16px; margin-top: 16px; font-size: 14px;">
+                <strong>⚠️ 风险提示：</strong>跨境电商的"月入 XX 万"案例 90% 是卖课/培训内容。实际运营需要处理物流、退货、平台规则、汇率等问题。建议先用 1-2 个月低成本试水，不要一开始就投入大量资金。
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON -->
+<section id="comparison">
+  <div class="container">
+    <div class="section-label fade-in">对比分析</div>
+    <h2 class="section-title fade-in">项目横向对比</h2>
+    <p class="section-desc fade-in">一目了然，帮你做决策。</p>
+
+    <div class="card fade-in" style="overflow-x: auto;">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>维度</th>
+            <th>AI 自动化服务</th>
+            <th>AI 知识付费</th>
+            <th>开发者接单</th>
+            <th>跨境电商+AI</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>启动资金</strong></td>
+            <td>¥0</td>
+            <td>¥500</td>
+            <td>¥0</td>
+            <td>¥3000+</td>
+          </tr>
+          <tr>
+            <td><strong>回本周期</strong></td>
+            <td>2-3 个月</td>
+            <td>3-6 个月</td>
+            <td>1 个月</td>
+            <td>3-6 个月</td>
+          </tr>
+          <tr>
+            <td><strong>月入1万难度</strong></td>
+            <td>中等</td>
+            <td>较难</td>
+            <td>容易</td>
+            <td>较难</td>
+          </tr>
+          <tr>
+            <td><strong>月入10万难度</strong></td>
+            <td>较难</td>
+            <td>中等</td>
+            <td>很难</td>
+            <td>中等</td>
+          </tr>
+          <tr>
+            <td><strong>被动收入潜力</strong></td>
+            <td>⭐⭐⭐⭐</td>
+            <td>⭐⭐⭐⭐⭐</td>
+            <td>⭐⭐</td>
+            <td>⭐⭐⭐</td>
+          </tr>
+          <tr>
+            <td><strong>技术门槛</strong></td>
+            <td>中</td>
+            <td>低</td>
+            <td>高</td>
+            <td>低</td>
+          </tr>
+          <tr>
+            <td><strong>销售门槛</strong></td>
+            <td>中</td>
+            <td>高</td>
+            <td>低</td>
+            <td>中</td>
+          </tr>
+          <tr>
+            <td><strong>可扩展性</strong></td>
+            <td>⭐⭐⭐⭐</td>
+            <td>⭐⭐⭐⭐⭐</td>
+            <td>⭐⭐</td>
+            <td>⭐⭐⭐⭐</td>
+          </tr>
+          <tr>
+            <td><strong>案例可信度</strong></td>
+            <td>中等</td>
+            <td>低</td>
+            <td>高</td>
+            <td>低</td>
+          </tr>
+          <tr>
+            <td><strong>推荐优先级</strong></td>
+            <td style="color: var(--success); font-weight: 700;">🥇 第一</td>
+            <td style="color: var(--accent); font-weight: 600;">🥈 第二（需先做项目1）</td>
+            <td style="color: var(--accent); font-weight: 600;">🥈 并行做（现金流）</td>
+            <td style="color: var(--text-muted);">🥉 备选</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card fade-in" style="margin-top: 24px;">
+      <h3 style="font-size: 17px; font-weight: 600; margin-bottom: 16px;">🎯 最优策略：组合打法</h3>
+      <p style="font-size: 15px; color: var(--text-secondary); line-height: 1.7;">
+        不要只选一个项目。<strong>建议同时做两件事：</strong><br><br>
+        <strong>主线（60%精力）：</strong>AI 自动化服务 — 选一个垂直领域，做案例、建口碑、积累产品。<br>
+        <strong>副线（40%精力）：</strong>开发者接单 — 在电鸭、程序员客栈接 AI 项目，保证现金流。<br><br>
+        当主线月入稳定 1 万+ 时，逐步减少接单，把精力集中到主线。<br>
+        当主线月入稳定 3 万+ 时，开始做知识付费（用真实案例做内容）。<br>
+        这就是"单点突破 → 产品化 → 被动收入"的路径。
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- HANGZHOU RESOURCES -->
+<section id="resources">
+  <div class="container">
+    <div class="section-label fade-in">杭州本地资源</div>
+    <h2 class="section-title fade-in">你可以利用的政策和资源</h2>
+    <p class="section-desc fade-in">杭州是中国 AI 创业政策最好的城市之一，以下是你可以申请的资源。</p>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
+      <div class="card fade-in">
+        <div class="card-header">
+          <div class="card-icon" style="background: #e8f5e9;">🏛️</div>
+          <div>
+            <div class="card-title">大学生创业补贴</div>
+            <div class="card-subtitle">毕业 5 年内可申请</div>
+          </div>
+        </div>
+        <ul style="font-size: 14px; line-height: 2; padding-left: 18px; color: var(--text-secondary);">
+          <li>创业启动资金补贴：最高 ¥500,000</li>
+          <li>免息/低息贷款：¥300,000-500,000</li>
+          <li>社保补贴：员工社保部分减免</li>
+          <li>房租补贴：部分孵化器免费 2-3 年</li>
+        </ul>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-header">
+          <div class="card-icon" style="background: #e3f2fd;">🏗️</div>
+          <div>
+            <div class="card-title">AI 专业孵化器</div>
+            <div class="card-subtitle">杭州特色资源</div>
+          </div>
+        </div>
+        <ul style="font-size: 14px; line-height: 2; padding-left: 18px; color: var(--text-secondary);">
+          <li><strong>梦想小镇</strong>（余杭区）：免费办公 3 年，天使资金 50-200 万</li>
+          <li><strong>人工智能小镇</strong>（余杭区）：AI 专项扶持</li>
+          <li><strong>云栖小镇</strong>：阿里巴巴生态，云计算 + AI</li>
+          <li><strong>高新区</strong>：研发补贴最高 1000 万</li>
+        </ul>
+      </div>
+
+      <div class="card fade-in">
+        <div class="card-header">
+          <div class="card-icon" style="background: #fff3e0;">🤖</div>
+          <div>
+            <div class="card-title">AI API 生态</div>
+            <div class="card-subtitle">降低开发成本</div>
+          </div>
+        </div>
+        <ul style="font-size: 14px; line-height: 2; padding-left: 18px; color: var(--text-secondary);">
+          <li><strong>DeepSeek</strong>：API 成本极低，效果接近 GPT-4</li>
+          <li><strong>通义千问</strong>：阿里出品，有免费额度</li>
+          <li><strong>智谱 AI</strong>：GLM 系列，有开发者扶持</li>
+          <li><strong>Coze（扣子）</strong>：字节跳动，免费搭建 AI 应用</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card fade-in" style="margin-top: 24px; background: var(--bg-warm);">
+      <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
+        <strong>💡 建议：</strong>你现在毕业快一年，在"大学生创业"的窗口期内。建议尽早了解杭州市人社局和余杭区的创业扶持政策。梦想小镇和人工智能小镇的免费工位+补贴可以大幅降低你的创业成本。具体政策请访问 <strong>hangzhou.gov.cn</strong> 或直接拨打 12333 咨询。
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ACTION PLAN -->
+<section id="action">
+  <div class="container">
+    <div class="section-label fade-in">行动计划</div>
+    <h2 class="section-title fade-in">30 天启动计划</h2>
+    <p class="section-desc fade-in">从今天开始，30 天内完成冷启动。</p>
+
+    <div class="card fade-in">
+      <ol class="action-list">
+        <li class="action-item">
+          <div class="action-number">1</div>
+          <div class="action-content">
+            <h4>选定垂直领域（第 1-3 天）</h4>
+            <p>不要纠结太久。从你最熟悉的领域开始，建议<strong>电商</strong>（杭州生态最成熟）。花 3 天走访 3-5 家电商店铺，了解他们最痛的重复工作。</p>
+            <span class="action-tag tag-urgent">紧急</span>
+          </div>
+        </li>
+        <li class="action-item">
+          <div class="action-number">2</div>
+          <div class="action-content">
+            <h4>搭建第一个 AI 工作流（第 4-10 天）</h4>
+            <p>用 Coze/Dify + DeepSeek API，做一个最小可用的自动化工具。比如：电商客服自动回复、商品描述自动生成。不要追求完美，能用就行。</p>
+            <span class="action-tag tag-urgent">紧急</span>
+          </div>
+        </li>
+        <li class="action-item">
+          <div class="action-number">3</div>
+          <div class="action-content">
+            <h4>免费试用 + 收集案例（第 11-25 天）</h4>
+            <p>免费给 3 家店铺部署你的 AI 工具。收集效果数据：节省了多少时间、提升了多少转化率。这些数据就是你后续收费的核心武器。</p>
+            <span class="action-tag tag-soon">重要</span>
+          </div>
+        </li>
+        <li class="action-item">
+          <div class="action-number">4</div>
+          <div class="action-content">
+            <h4>同步注册接单平台（第 1-7 天）</h4>
+            <p>在电鸭社区、程序员客栈注册账号，完善个人资料，突出 AI 开发能力。开始接一些小项目，保证现金流。这和主线并行做。</p>
+            <span class="action-tag tag-soon">重要</span>
+          </div>
+        </li>
+        <li class="action-item">
+          <div class="action-number">5</div>
+          <div class="action-content">
+            <h4>开始内容营销（第 15-30 天）</h4>
+            <p>在小红书/抖音发 1-2 条"AI 自动化"的案例内容。不需要很精致，真实 > 完美。展示你的工具在真实店铺上的效果。</p>
+            <span class="action-tag tag-plan">计划</span>
+          </div>
+        </li>
+        <li class="action-item">
+          <div class="action-number">6</div>
+          <div class="action-content">
+            <h4>了解杭州创业政策（第 5-10 天）</h4>
+            <p>拨 12333 或访问 hangzhou.gov.cn，了解大学生创业补贴、孵化器入驻条件。你在窗口期内，不要错过。</p>
+            <span class="action-tag tag-plan">计划</span>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- RISKS -->
+<section id="risks">
+  <div class="container">
+    <div class="section-label fade-in">风险提示</div>
+    <h2 class="section-title fade-in">必须知道的坑</h2>
+    <p class="section-desc fade-in">90% 的人倒在这些地方。提前知道，提前规避。</p>
+
+    <div style="display: grid; gap: 16px;">
+      <div class="card fade-in">
+        <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px;">🚫 坑 1：追求完美，迟迟不启动</h3>
+        <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
+          "等我技术再好一点"、"等我再学一下"、"等我准备好"——这些都是拖延的借口。你的 MVP 只需要 60 分就能开始测试市场。<strong>先上线，再迭代。</strong>
+        </p>
+      </div>
+
+      <div class="card fade-in">
+        <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px;">🚫 坑 2：做通用型工具</h3>
+        <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
+          "我要做一个 AI 助手平台"、"我要做一个全能 AI 工具"——这种想法 99% 会失败。通用型工具意味着你要和大厂竞争。<strong>一定要垂直细分，做"XX行业的AI工具"。</strong>
+        </p>
+      </div>
+
+      <div class="card fade-in">
+        <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px;">🚫 坑 3：被"月入10万"的案例误导</h3>
+        <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
+          网上 90% 的"月入 10 万+"案例是卖课/培训/营销内容。真正可独立验证的案例极少。<strong>不要用别人的收入预期来规划自己的路径。</strong>月入 1 万是一个更现实的 3-6 个月目标。
+        </p>
+      </div>
+
+      <div class="card fade-in">
+        <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px;">🚫 坑 4：同时做太多事</h3>
+        <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
+          一个人的精力有限。不要同时做 AI 自动化 + 知识付费 + 跨境电商 + 接单。<strong>最多同时做 2 件事（一主一副）</strong>，先把一个做到月入 1 万再扩展。
+        </p>
+      </div>
+
+      <div class="card fade-in">
+        <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px;">🚫 坑 5：忽视私域运营</h3>
+        <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
+          每一个客户都要加到微信里。私域是你最大的资产。不要只依赖平台流量，平台规则一变你就回到原点。<strong>从第一天开始就建私域。</strong>
+        </p>
+      </div>
+
+      <div class="card fade-in">
+        <h3 style="font-size: 16px; font-weight: 600; margin-bottom: 12px;">🚫 坑 6：技术人常见的错误——只关注技术</h3>
+        <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.6;">
+          作为开发者，你最大的风险不是技术不行，而是<strong>不懂销售和运营</strong>。产品再好，没人知道也没用。花 30% 的时间学营销和销售，这比多写 30% 的代码更有价值。
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- BOTTOM LINE -->
+<section style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white;">
+  <div class="container" style="text-align: center; padding: 64px 24px;">
+    <div class="section-label fade-in" style="color: rgba(255,255,255,0.5);">结语</div>
+    <h2 class="section-title fade-in" style="color: white;">最重要的不是选哪个项目</h2>
+    <p class="fade-in" style="font-size: 17px; color: rgba(255,255,255,0.7); max-width: 600px; margin: 0 auto 32px; line-height: 1.6;">
+      而是<strong style="color: white;">今天就开始做</strong>。完美的计划不如 60 分的行动。你的优势是技术能力，你的限制是时间和资金。所以：<strong style="color: white;">选一个方向，30 天内出第一个成果，然后根据市场反馈调整。</strong>
+    </p>
+    <div class="fade-in" style="display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center;">
+      <div style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 12px 20px; font-size: 14px;">
+        第 1 天：选定方向
+      </div>
+      <div style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 12px 20px; font-size: 14px;">
+        第 7 天：做出 MVP
+      </div>
+      <div style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 12px 20px; font-size: 14px;">
+        第 30 天：第一个付费客户
+      </div>
+      <div style="background: rgba(0,117,222,0.3); border: 1px solid rgba(0,117,222,0.5); border-radius: 8px; padding: 12px 20px; font-size: 14px; font-weight: 600;">
+        第 90 天：月入 ¥10,000
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>2026 单人轻资产创业调研报告 · 基于真实市场数据 · 生成时间：2026年5月28日</p>
+  <p style="margin-top: 4px;">数据来源：36kr、知乎、TechNode、Reddit、GitHub · 案例数据仅供参考，请独立验证</p>
+</footer>
+
+<script>
+// ===== Tab switching =====
+function switchTab(btn, panelId) {
+  const container = btn.closest('.project-content');
+  container.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  container.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(panelId).classList.add('active');
+}
+
+// ===== Collapsible =====
+function toggleCollapsible(btn) {
+  btn.classList.toggle('open');
+  const content = btn.nextElementSibling;
+  content.classList.toggle('open');
+}
+
+// ===== Scroll animations =====
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// ===== Active nav link =====
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav-links a');
+
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(section => {
+    const sectionTop = section.offsetTop - 100;
+    if (scrollY >= sectionTop) {
+      current = section.getAttribute('id');
+    }
+  });
+  navLinks.forEach(link => {
+    link.classList.remove('active');
+    if (link.getAttribute('href') === '#' + current) {
+      link.classList.add('active');
+    }
+  });
+});
+
+// ===== Smooth scroll =====
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', function (e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+</script>
+
+</body>
+</html>
