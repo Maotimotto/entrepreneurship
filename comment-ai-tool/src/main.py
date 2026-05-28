@@ -5,12 +5,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from src.api.routes import router
+from src.core.logger import setup_logging
 import os
+
+setup_logging()
 
 app = FastAPI(
     title="评论AI",
     description="短视频评论智能识别与自动转化工具",
-    version="0.1.1",
+    version="0.1.2",
 )
 
 app.add_middleware(
@@ -34,12 +37,7 @@ async def root():
     index_path = os.path.join(static_dir, "index.html")
     if os.path.exists(index_path):
         return FileResponse(index_path)
-    return {
-        "name": "评论AI",
-        "version": "0.1.1",
-        "status": "running",
-        "docs": "/docs",
-    }
+    return {"name": "评论AI", "version": "0.1.2", "status": "running", "docs": "/docs"}
 
 
 if __name__ == "__main__":
