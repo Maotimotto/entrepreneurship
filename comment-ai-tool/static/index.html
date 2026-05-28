@@ -6,7 +6,7 @@
   <title>评论AI — 控制台</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
-    :root{--bg:#0f1117;--s1:#1a1d27;--s2:#242836;--bd:#2e3347;--t1:#e4e4e7;--t2:#9ca3af;--a1:#6366f1;--a2:#818cf8;--cy:#22d3ee;--gn:#10b981;--yl:#f59e0b;--rd:#ef4444}
+    :root{--bg:#0f1117;--s1:#1a1d27;--s2:#242836;--bd:#2e3347;--t1:#e4e4e7;--t2:#9ca3af;--a1:#6366f1;--a2:#818cf8;--cy:#22d3ee;--gn:#10b981;--yl:#f59e0b;--rd:#ef4444;--pk:#f472b6}
     body{font-family:'SF Pro',-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--t1);min-height:100vh}
 
     .hdr{padding:14px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
@@ -30,6 +30,12 @@
     .stat .vl{font-size:26px;font-weight:700;letter-spacing:-1px}
     .stat .vl.a{color:var(--a2)}.stat .vl.c{color:var(--cy)}.stat .vl.g{color:var(--gn)}.stat .vl.y{color:var(--yl)}
 
+    /* 情感统计 */
+    .sentiment-bar{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
+    .sentiment-item{display:flex;align-items:center;gap:6px;font-size:12px;padding:6px 12px;background:var(--s1);border:1px solid var(--bd);border-radius:6px}
+    .sentiment-dot{width:8px;height:8px;border-radius:50%}
+    .sentiment-dot.pos{background:var(--gn)}.sentiment-dot.neg{background:var(--rd)}.sentiment-dot.neu{background:var(--t2)}.sentiment-dot.mix{background:var(--yl)}
+
     /* Actions */
     .act{display:flex;gap:8px;margin:14px 0}
     .btn{padding:8px 16px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:.2s}
@@ -47,8 +53,10 @@
     .cu{display:flex;align-items:center;gap:8px}
     .av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff}
     .un{font-size:12px;font-weight:600}
+    .badges{display:flex;gap:6px;align-items:center}
     .bd{padding:2px 7px;border-radius:999px;font-size:10px;font-weight:700}
     .bd-h{background:rgba(99,102,241,.2);color:var(--a2)}.bd-m{background:rgba(245,158,11,.15);color:var(--yl)}.bd-l{background:rgba(156,163,175,.1);color:var(--t2)}
+    .bd-pos{background:rgba(16,185,129,.15);color:var(--gn)}.bd-neg{background:rgba(239,68,68,.15);color:var(--rd)}.bd-neu{background:rgba(156,163,175,.1);color:var(--t2)}
 
     .cb{padding:0 14px 10px}
     .ct-text{font-size:13px;line-height:1.55;margin-bottom:8px}
@@ -76,17 +84,16 @@
 <body>
   <div class="hdr">
     <h1>评论<span>AI</span></h1>
-    <div class="st"><div class="dot"></div> v0.1.3</div>
+    <div class="st"><div class="dot"></div> v0.2.1</div>
   </div>
 
   <div class="wrap">
-    <!-- 流程图 -->
     <div class="flow">
       <div class="flow-step"><div class="icon">📱</div>评论采集</div>
       <div class="flow-arrow">→</div>
       <div class="flow-step"><div class="icon">🧠</div>AI意图分析</div>
       <div class="flow-arrow">→</div>
-      <div class="flow-step"><div class="icon">🎯</div>潜客筛选</div>
+      <div class="flow-step"><div class="icon">❤️</div>情感分析</div>
       <div class="flow-arrow">→</div>
       <div class="flow-step"><div class="icon">💬</div>智能回复</div>
       <div class="flow-arrow">→</div>
@@ -100,18 +107,29 @@
       <div class="stat"><div class="lb">转化率</div><div class="vl y" id="sP">—</div></div>
     </div>
 
+    <div class="sentiment-bar" id="sentBar" style="display:none">
+      <div class="sentiment-item"><div class="sentiment-dot pos"></div> 正面 <strong id="sPos">0</strong></div>
+      <div class="sentiment-item"><div class="sentiment-dot neg"></div> 负面 <strong id="sNeg">0</strong></div>
+      <div class="sentiment-item"><div class="sentiment-dot neu"></div> 中性 <strong id="sNeu">0</strong></div>
+      <div class="sentiment-item"><div class="sentiment-dot mix"></div> 混合 <strong id="sMix">0</strong></div>
+    </div>
+
     <div class="act">
       <button class="btn btn-p" onclick="run()" id="rBtn">▶ 运行演示</button>
       <button class="btn btn-g" onclick="clr()">清空</button>
     </div>
 
     <div class="feed" id="fd">
-      <div class="empty"><div class="ic">💬</div><p>点击「运行演示」查看 AI 如何识别评论意图、筛选潜客、生成回复</p></div>
+      <div class="empty"><div class="ic">💬</div><p>点击「运行演示」查看 AI 如何识别评论意图、分析情感、筛选潜客</p></div>
     </div>
   </div>
 
   <script>
     const C=['#6366f1','#22d3ee','#10b981','#f59e0b','#ef4444','#a78bfa','#f472b6','#34d399','#fbbf24','#fb923c'];
+
+    function sentLabel(s){return{positive:'😊 正面',negative:'😤 负面',neutral:'😐 中性',mixed:'🤔 混合'}[s]||s}
+    function sentClass(s){return{positive:'bd-pos',negative:'bd-neg',neutral:'bd-neu',mixed:'bd-m'}[s]||'bd-neu'}
+
     async function run(){
       const b=document.getElementById('rBtn');b.disabled=true;b.textContent='⏳ 分析中...';
       document.getElementById('fd').innerHTML='<div class="ld"><div class="sp"></div><div>AI 正在分析...</div></div>';
@@ -121,13 +139,29 @@
         document.getElementById('sL').textContent=d.leads_found;
         document.getElementById('sR').textContent=d.replies_generated;
         document.getElementById('sP').textContent=d.total_comments?Math.round(d.leads_found/d.total_comments*100)+'%':'0%';
+
+        // 情感统计
+        if(d.sentiment_summary){
+          document.getElementById('sentBar').style.display='flex';
+          document.getElementById('sPos').textContent=d.sentiment_summary.positive||0;
+          document.getElementById('sNeg').textContent=d.sentiment_summary.negative||0;
+          document.getElementById('sNeu').textContent=d.sentiment_summary.neutral||0;
+          document.getElementById('sMix').textContent=d.sentiment_summary.mixed||0;
+        }
+
         const f=document.getElementById('fd');f.innerHTML='';
         d.results.forEach((x,i)=>{
           const el=document.createElement('div');el.className='card';el.style.animationDelay=`${i*.05}s`;
           const sc=x.score>=.7?'bd-h':x.score>=.4?'bd-m':'bd-l';
           const sl=x.score>=.7?'🔥 高意向':x.score>=.4?'👀 中意向':'💤 低意向';
           el.innerHTML=`
-            <div class="ct"><div class="cu"><div class="av" style="background:${C[i%10]}">${x.author[0]}</div><div class="un">${x.author}</div></div><div class="bd ${sc}">${sl} ${(x.score*100).toFixed(0)}分</div></div>
+            <div class="ct">
+              <div class="cu"><div class="av" style="background:${C[i%10]}">${x.author[0]}</div><div class="un">${x.author}</div></div>
+              <div class="badges">
+                <div class="bd ${sentClass(x.sentiment)}">${sentLabel(x.sentiment)}</div>
+                <div class="bd ${sc}">${sl} ${(x.score*100).toFixed(0)}分</div>
+              </div>
+            </div>
             <div class="cb"><div class="ct-text">${x.comment}</div><div class="tags"><span class="tg tg-i">${x.intent}</span><span class="tg tg-u">${x.urgency}</span>${x.keywords.map(k=>`<span class="tg tg-k">${k}</span>`).join('')}</div></div>
             ${x.reply?`<div class="rp"><div class="lb">💬 AI 回复</div><div class="tx">${x.reply}</div></div>`:''}`;
           f.appendChild(el);
@@ -135,7 +169,7 @@
       }catch(e){document.getElementById('fd').innerHTML=`<div class="empty"><div class="ic">⚠️</div><p>${e.message}</p></div>`}
       finally{b.disabled=false;b.textContent='▶ 运行演示'}
     }
-    function clr(){document.getElementById('fd').innerHTML='<div class="empty"><div class="ic">💬</div><p>点击「运行演示」开始</p></div>';['sT','sL','sR','sP'].forEach(i=>document.getElementById(i).textContent='—')}
+    function clr(){document.getElementById('fd').innerHTML='<div class="empty"><div class="ic">💬</div><p>点击「运行演示」开始</p></div>';['sT','sL','sR','sP'].forEach(i=>document.getElementById(i).textContent='—');document.getElementById('sentBar').style.display='none'}
   </script>
 </body>
 </html>
