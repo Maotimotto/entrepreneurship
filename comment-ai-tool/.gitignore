@@ -11,5 +11,5 @@ build/
 venv/
 .pytest_cache/
 .mypy_cache/
-test_*.py
-/tmp/
+*.log
+.DS_Store
