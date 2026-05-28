@@ -5,6 +5,7 @@ from openai import AsyncOpenAI
 from config.settings import settings
 from src.models.comment import Comment, LeadScore
 from src.analyzers.keyword_engine import keyword_engine
+from src.core.cache import intent_cache, make_cache_key
 
 logger = logging.getLogger(__name__)
 
@@ -50,9 +51,24 @@ class IntentAnalyzer:
 
     async def analyze(self, comment: Comment) -> LeadScore:
         """分析单条评论，返回潜客评分"""
-        if not self._has_api_key:
-            return self._keyword_score(comment)
+        # 检查缓存
+        cache_key = make_cache_key(comment.content, "intent")
+        cached = intent_cache.get(cache_key)
+        if cached:
+            cached.comment_id = comment.id
+            return cached
 
+        if not self._has_api_key:
+            result = self._keyword_score(comment)
+        else:
+            result = await self._llm_score(comment)
+
+        # 存入缓存
+        intent_cache.set(cache_key, result)
+        return result
+
+    async def _llm_score(self, comment: Comment) -> LeadScore:
+        """LLM分析"""
         prompt = INTENT_PROMPT.format(
             comment=comment.content,
             post_title=comment.post_title,
@@ -80,9 +96,8 @@ class IntentAnalyzer:
             return self._keyword_score(comment)
 
     def _keyword_score(self, comment: Comment) -> LeadScore:
-        """增强关键词评分 — 使用同义词引擎"""
+        """增强关键词评分"""
         result = keyword_engine.analyze(comment.content)
-
         return LeadScore(
             comment_id=comment.id,
             score=result.score,
