@@ -1,109 +1,116 @@
 # 🤖 评论AI — 短视频评论智能识别与自动转化
 
-> AI 驱动的多平台评论监控 → 潜客识别 → 智能回复 → 私域引流一体化工具
+> AI 驱动的多平台评论监控 → 意图识别 → 情感分析 → 智能回复 → 私域引流一体化工具
 
-## 它能做什么
+## 核心能力
 
-```
-用户评论: "这个怎么做的？想学！有教程吗"
-     ↓ AI 分析
-潜客评分: 0.85 / 意图: potential_lead / 紧急度: high
-     ↓ 智能回复
-自动生成: "感谢关注！想了解更多可以私信我~"
-     ↓ 私域建档
-自动归档为潜客，等待跟进
-```
+| 能力 | 说明 |
+|------|------|
+| 🧠 意图识别 | LLM 分析 + 增强关键词引擎（同义词、否定词检测） |
+| ❤️ 情感分析 | 正面/负面/中性/混合，支持置信度 |
+| 💬 智能回复 | LLM 生成 + 模板降级，按潜客分层策略 |
+| 📊 数据持久化 | SQLite 三表存储，数据不丢 |
+| ⚡ 性能优化 | LRU 缓存、批量处理、命中率统计 |
+| 🎨 控制台 | 暗色主题 Web UI，一键演示 |
 
 ## 快速开始
 
 ```bash
-# 1. 安装依赖
+# 安装依赖
 pip install fastapi uvicorn httpx pydantic pydantic-settings python-dotenv openai
 
-# 2. 启动服务
+# 启动
 cd comment-ai-tool
 python -m src.main
 
-# 3. 打开控制台
-# 浏览器访问 http://localhost:8000
-# 点击「运行演示」查看效果
+# 访问控制台
+open http://localhost:8000
 ```
 
-## 控制台预览
-
-暗色主题控制台，一键运行演示：
-- 📊 实时统计：评论数、潜客数、回复数、转化率
-- 🎯 意图识别：高/中/低意向自动分类
-- 💬 智能回复：AI 自动生成个性化回复
-- 🏷️ 关键词标签：自动提取触发词
+或使用启动脚本：
+```bash
+chmod +x start.sh
+./start.sh
+```
 
 ## 技术架构
 
 ```
-┌──────────────┐    ┌───────────────┐    ┌──────────────┐    ┌────────────┐
-│  评论监控     │ →  │  AI 意图分析   │ →  │  智能回复     │ →  │  私域引流   │
-│  (多平台)     │    │  (LLM+降级)   │    │  (个性化)     │    │  (潜客库)   │
-└──────────────┘    └───────────────┘    └──────────────┘    └────────────┘
+评论采集 → 意图分析 → 情感分析 → 潜客评分 → 智能回复 → 私域建档
+  (多平台)   (LLM+关键词)  (词典)    (0-1分)    (LLM+模板)  (SQLite)
 ```
-
-| 模块 | 文件 | 说明 |
-|------|------|------|
-| 数据模型 | `src/models/comment.py` | Comment, LeadScore, Lead |
-| 意图分析 | `src/analyzers/intent_analyzer.py` | LLM分析 + 关键词降级 |
-| 智能回复 | `src/repliers/reply_generator.py` | LLM生成 + 模板降级 |
-| 评论监控 | `src/monitors/` | 各平台评论采集器 |
-| API接口 | `src/api/routes.py` | FastAPI RESTful |
-| 控制台 | `static/index.html` | 暗色主题 Web UI |
 
 ## API 文档
 
-启动后访问 http://localhost:8000/docs 查看 Swagger 文档。
+启动后访问 http://localhost:8000/docs
 
-核心接口：
-- `POST /api/v1/demo/run` — 演示模式，跑完整流程
-- `POST /api/v1/analyze` — 分析单条评论
-- `GET  /api/v1/leads` — 获取潜客列表
-- `PUT  /api/v1/leads/{id}/status` — 更新潜客状态
-
-## 配置
-
-复制 `.env.example` 为 `.env`，配置 AI API Key 启用 LLM 分析：
-
-```bash
-cp .env.example .env
-# 编辑 .env，填入 API Key
-```
-
-无 API Key 时自动使用关键词匹配（降级模式，开箱即用）。
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/v1/demo/run` | POST | 演示模式，跑完整流程 |
+| `/api/v1/analyze` | POST | 分析单条评论 |
+| `/api/v1/leads` | GET | 获取潜客列表 |
+| `/api/v1/leads/export` | GET | 导出CSV |
+| `/api/v1/stats` | GET | 统计数据 |
 
 ## 测试
 
 ```bash
-python test_smoke.py   # 模型基础测试
-python test_api.py     # API 集成测试 (29项)
+# 运行全部测试 (95项)
+python test_api.py        # 33项 API 集成测试
+python test_edge.py       # 15项 边界测试
+python test_keyword.py    # 30项 关键词引擎测试
+python test_sentiment.py  # 17项 情感分析测试
 ```
 
 ## 当前状态
 
-**v0.1.2** — MVP 阶段
+**v0.2.4** — 95 项测试全通过
 
-已完成：
-- ✅ 评论数据模型
-- ✅ AI 意图分析（LLM + 关键词降级）
-- ✅ 智能回复生成（LLM + 模板降级）
-- ✅ 抖音评论监控器（模拟数据）
-- ✅ FastAPI RESTful API
-- ✅ 暗色控制台 Web UI
-- ✅ 潜客管理（建档/状态更新）
-- ✅ 集成测试（29项全通过）
+✅ 已完成:
+- 评论数据模型 (Comment, LeadScore, Lead)
+- 增强关键词引擎 (同义词组、否定词检测、情感分析)
+- AI 意图分析 (LLM + 关键词降级)
+- 智能回复生成 (LLM + 模板降级)
+- 抖音评论监控器 (模拟数据)
+- SQLite 持久化 (leads, scores, analysis_log)
+- LRU 缓存 (意图分析、情感分析)
+- FastAPI RESTful API
+- 暗色控制台 Web UI
+- 潜客管理 (建档/状态更新/CSV导出)
+- 结构化日志
+- 95 项自动化测试
 
-待开发：
-- 🔲 抖音开放平台 API 对接
-- 🔲 小红书评论监控
-- 🔲 数据持久化（SQLite → PostgreSQL）
-- 🔲 定时任务调度
-- 🔲 私域引流链路（企微/微信）
-- 🔲 数据统计与报表
+🔲 待开发:
+- 抖音开放平台 API 对接
+- 小红书评论监控
+- 定时任务调度
+- 私域引流链路
+
+## 项目结构
+
+```
+comment-ai-tool/
+├── config/settings.py          # 配置管理
+├── src/
+│   ├── analyzers/
+│   │   ├── intent_analyzer.py  # 意图分析 (LLM+关键词)
+│   │   ├── keyword_engine.py   # 增强关键词引擎
+│   │   └── sentiment.py        # 情感分析
+│   ├── api/routes.py           # FastAPI 路由
+│   ├── core/
+│   │   ├── cache.py            # LRU 缓存
+│   │   ├── database.py         # SQLite 持久化
+│   │   └── logger.py           # 日志配置
+│   ├── models/comment.py       # 数据模型
+│   ├── monitors/               # 平台监控器
+│   ├── repliers/reply_generator.py  # 回复生成
+│   └── main.py                 # 入口
+├── static/index.html           # 控制台 UI
+├── test_*.py                   # 测试文件
+├── Makefile                    # 便捷命令
+├── pyproject.toml              # 打包配置
+└── README.md
+```
 
 ## 许可
 
