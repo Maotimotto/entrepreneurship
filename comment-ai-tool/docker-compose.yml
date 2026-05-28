@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  comment-ai:
+    build: .
+    container_name: comment-ai
+    ports:
+      - "8000:8000"
+    volumes:
+      - comment-ai-data:/data
+    environment:
+      - AI_PROVIDER=${AI_PROVIDER:-openai}
+      - AI_API_KEY=${AI_API_KEY:-}
+      - AI_MODEL=${AI_MODEL:-gpt-4o-mini}
+      - AI_BASE_URL=${AI_BASE_URL:-https://api.openai.com/v1}
+      - COMMENT_AI_DB=/data/comment_ai.db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import httpx; r=httpx.get('http://localhost:8000/api/v1/health'); assert r.json()['status']=='ok'"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  comment-ai-data:
