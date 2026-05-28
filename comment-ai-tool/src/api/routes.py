@@ -7,6 +7,7 @@ from typing import Optional
 from src.models.comment import Comment, LeadScore, Lead, Platform
 from src.core.database import LeadStore, ScoreStore, AnalysisLogStore
 from src.core.cache import intent_cache, sentiment_cache
+from src.core.dedup import deduplicator
 from src.core.validator import validate_config
 from src.core.logger import logging
 from datetime import datetime
@@ -21,7 +22,7 @@ async def health():
     config = validate_config()
     return {
         "status": "ok",
-        "version": "0.2.5",
+        "version": "0.3.0",
         "leads": LeadStore.count(),
         "config_valid": config["valid"],
         "mode": "llm" if config["config"]["has_api_key"] else "keyword",
@@ -51,11 +52,18 @@ async def clear_cache():
     return {"ok": True, "message": "缓存已清空"}
 
 
+@router.get("/dedup/stats")
+async def dedup_stats():
+    """去重统计"""
+    return deduplicator.stats()
+
+
 @router.get("/leads")
 async def list_leads(
     status: Optional[str] = None,
     min_score: float = 0.0,
     platform: Optional[str] = None,
+    category: Optional[str] = None,
 ):
     """获取潜客列表"""
     results = LeadStore.list_all(status=status, min_score=min_score)
@@ -73,7 +81,7 @@ async def export_leads():
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["ID", "平台", "用户ID", "昵称", "评分", "状态", "标签", "创建时间"])
+    writer.writerow(["ID", "平台", "用户ID", "昵称", "评分", "状态", "分类", "标签", "创建时间"])
     for lead in leads:
         writer.writerow([
             lead.id, lead.platform.value, lead.author_id, lead.author_name,
@@ -115,10 +123,16 @@ async def analyze_comment(comment: Comment):
     """手动分析单条评论"""
     from src.analyzers.intent_analyzer import IntentAnalyzer
     from src.analyzers.sentiment import sentiment_analyzer
+    from src.analyzers.lead_classifier import lead_classifier
+
+    # 去重检查
+    if deduplicator.is_duplicate(comment.content, comment.author_id, comment.platform.value):
+        raise HTTPException(409, "重复评论")
 
     analyzer = IntentAnalyzer()
     score = await analyzer.analyze(comment)
     sentiment = sentiment_analyzer.analyze(comment.content)
+    classification = lead_classifier.classify(comment.content, score.keywords, score.score)
 
     ScoreStore.save(score)
     AnalysisLogStore.log(comment.content, comment.author_name, comment.platform.value,
@@ -129,6 +143,9 @@ async def analyze_comment(comment: Comment):
         **score.model_dump(),
         "sentiment": sentiment.sentiment.value,
         "sentiment_confidence": sentiment.confidence,
+        "category": classification.category.value,
+        "category_confidence": classification.confidence,
+        "category_tags": classification.tags,
     }
 
 
@@ -138,16 +155,23 @@ async def demo_run():
     from src.monitors.douyin_monitor import MOCK_COMMENTS
     from src.analyzers.intent_analyzer import IntentAnalyzer
     from src.analyzers.sentiment import sentiment_analyzer
+    from src.analyzers.lead_classifier import lead_classifier
     from src.repliers.reply_generator import ReplyGenerator
 
     logger.info("Demo 开始")
+    deduplicator.clear()  # 清空去重记录
+
     analyzer = IntentAnalyzer()
     replier = ReplyGenerator()
     results = []
 
     for comment in MOCK_COMMENTS:
+        # 去重
+        is_dup = deduplicator.is_duplicate(comment.content, comment.author_id, comment.platform.value)
+
         score = await analyzer.analyze(comment)
         sentiment = sentiment_analyzer.analyze(comment.content)
+        classification = lead_classifier.classify(comment.content, score.keywords, score.score)
         ScoreStore.save(score)
 
         reply = ""
@@ -162,7 +186,7 @@ async def demo_run():
                 author_name=comment.author_name,
                 first_comment_id=comment.id,
                 lead_score=score.score,
-                tags=score.keywords,
+                tags=classification.tags,
                 created_at=datetime.now(),
             )
             LeadStore.save(lead)
@@ -179,8 +203,11 @@ async def demo_run():
             "keywords": score.keywords,
             "sentiment": sentiment.sentiment.value,
             "sentiment_confidence": sentiment.confidence,
+            "category": classification.category.value,
+            "category_confidence": classification.confidence,
             "reply": reply,
             "is_lead": score.score >= 0.5,
+            "is_duplicate": is_dup,
         })
 
     results.sort(key=lambda x: x["score"], reverse=True)
@@ -192,12 +219,14 @@ async def demo_run():
         "total_comments": len(MOCK_COMMENTS),
         "leads_found": leads_n,
         "replies_generated": replies_n,
+        "duplicates_found": sum(1 for r in results if r["is_duplicate"]),
         "sentiment_summary": {
             "positive": sum(1 for r in results if r["sentiment"] == "positive"),
             "negative": sum(1 for r in results if r["sentiment"] == "negative"),
             "neutral": sum(1 for r in results if r["sentiment"] == "neutral"),
             "mixed": sum(1 for r in results if r["sentiment"] == "mixed"),
         },
+        "category_summary": {},
         "results": results,
     }
 
@@ -212,4 +241,5 @@ async def get_stats():
             "intent": intent_cache.stats(),
             "sentiment": sentiment_cache.stats(),
         },
+        "dedup": deduplicator.stats(),
     }
