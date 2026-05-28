@@ -1,8 +1,10 @@
 """智能回复生成器 — 根据潜客评分和意图生成个性化回复"""
+import logging
 from openai import AsyncOpenAI
 from config.settings import settings
 from src.models.comment import Comment, LeadScore
 
+logger = logging.getLogger(__name__)
 
 REPLY_PROMPT = """你是一个友善、专业的短视频博主助手。根据以下信息生成一条回复评论。
 
@@ -24,21 +26,48 @@ REPLY_PROMPT = """你是一个友善、专业的短视频博主助手。根据�
 只返回回复内容文本，不要其他。"""
 
 
+# 回复模板库 — 无LLM时使用
+REPLY_TEMPLATES = {
+    "high": [
+        "感谢关注！想了解更多可以私信我~",
+        "谢谢支持！这个我有详细教程，私信发你",
+        "感兴趣的话可以私信聊聊，我帮你分析下",
+    ],
+    "medium": [
+        "谢谢认可！有问题随时问 😊",
+        "感谢关注！后续会出更多干货内容",
+        "谢谢支持，一起学习进步！",
+    ],
+    "low": [
+        "感谢评论 ❤️",
+        "谢谢~",
+    ],
+}
+
+
 class ReplyGenerator:
-    """AI回复生成器"""
+    """AI回复生成器，无API key时使用模板"""
 
     def __init__(self):
-        self.client = AsyncOpenAI(
-            api_key=settings.ai_api_key,
-            base_url=settings.ai_base_url,
-        )
-        self.model = settings.ai_model
+        self._has_api_key = bool(settings.ai_api_key and settings.ai_api_key != "your-api-key")
+        if self._has_api_key:
+            self.client = AsyncOpenAI(
+                api_key=settings.ai_api_key,
+                base_url=settings.ai_base_url,
+            )
+            self.model = settings.ai_model
+            logger.info(f"ReplyGenerator: LLM模式")
+        else:
+            self.client = None
+            logger.info("ReplyGenerator: 模板模式 (未配置AI API Key)")
 
     async def generate(self, comment: Comment, score: LeadScore) -> str:
         """生成智能回复"""
-        # 低分评论不回复
         if score.score < settings.min_lead_score:
             return ""
+
+        if not self._has_api_key:
+            return self._template_reply(score)
 
         prompt = REPLY_PROMPT.format(
             comment=comment.content,
@@ -56,14 +85,16 @@ class ReplyGenerator:
                 max_tokens=200,
             )
             return resp.choices[0].message.content.strip()
-        except Exception:
-            return self._fallback_reply(comment, score)
+        except Exception as e:
+            logger.warning(f"LLM回复生成失败，降级为模板: {e}")
+            return self._template_reply(score)
 
-    def _fallback_reply(self, comment: Comment, score: LeadScore) -> str:
-        """降级回复模板"""
-        if score.score >= 0.8:
-            return "感谢关注！想了解更多可以私信我~"
-        elif score.score >= 0.6:
-            return "谢谢支持！有问题随时问我 😊"
+    def _template_reply(self, score: LeadScore) -> str:
+        """模板回复 — 无LLM时的降级方案"""
+        import random
+        if score.score >= 0.7:
+            return random.choice(REPLY_TEMPLATES["high"])
+        elif score.score >= 0.4:
+            return random.choice(REPLY_TEMPLATES["medium"])
         else:
-            return "感谢评论 ❤️"
+            return random.choice(REPLY_TEMPLATES["low"])
