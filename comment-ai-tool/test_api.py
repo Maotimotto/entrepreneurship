@@ -1,10 +1,20 @@
 #!/usr/bin/env python3
-"""API 集成测试 — 覆盖全部端点和场景"""
+"""API 集成测试 — 使用测试数据库"""
 import sys
+import os
 import asyncio
-sys.path.insert(0, '.')
+import tempfile
 
+# 使用临时数据库
+os.environ["COMMENT_AI_DB"] = os.path.join(tempfile.gettempdir(), "test_comment_ai.db")
+
+sys.path.insert(0, '.')
 from httpx import AsyncClient, ASGITransport
+from src.core.database import init_db
+
+# 初始化测试数据库
+init_db()
+
 from src.main import app
 
 PASS = 0
@@ -25,7 +35,6 @@ async def test_api():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as c:
 
-        # === 基础端点 ===
         print("\n📡 基础端点")
         r = await c.get("/")
         check("GET / 返回页面", r.status_code == 200 and "评论" in r.text)
@@ -33,7 +42,6 @@ async def test_api():
         r = await c.get("/api/v1/health")
         check("GET /health", r.status_code == 200 and r.json()["status"] == "ok")
 
-        # === Demo 全链路 ===
         print("\n🎬 Demo 全链路")
         r = await c.post("/api/v1/demo/run")
         check("POST /demo/run 200", r.status_code == 200)
@@ -43,23 +51,19 @@ async def test_api():
         check("回复数>=3", d["replies_generated"] >= 3, f"got {d['replies_generated']}")
         check("结果已排序", d["results"][0]["score"] >= d["results"][-1]["score"])
 
-        # 验证高意向评论被正确识别
         high_scores = [r for r in d["results"] if r["score"] >= 0.7]
-        check("高意向评论>=2", len(high_scores) >= 2)
+        check("高意向>=2", len(high_scores) >= 2)
         for h in high_scores[:2]:
             check(f"  {h['author']}有回复", len(h["reply"]) > 0)
 
-        # 验证低意向评论
         low_scores = [r for r in d["results"] if r["score"] < 0.4]
-        check("低意向评论>=2", len(low_scores) >= 2)
+        check("低意向>=2", len(low_scores) >= 2)
 
-        # 验证结果字段完整性
         first = d["results"][0]
         for key in ["comment", "author", "score", "intent", "urgency", "keywords", "reply", "is_lead"]:
-            check(f"字段 {key} 存在", key in first)
+            check(f"字段{key}", key in first)
 
-        # === 潜客管理 ===
-        print("\n👤 潜客管理")
+        print("\n👤 潜客管理 (持久化)")
         r = await c.get("/api/v1/leads")
         check("GET /leads", r.status_code == 200)
         leads = r.json()
@@ -73,16 +77,17 @@ async def test_api():
             r = await c.put(f"/api/v1/leads/{lid}/status?status=contacted")
             check("PUT /leads/:id/status", r.status_code == 200)
 
+            # 验证持久化
+            r = await c.get(f"/api/v1/leads/{lid}")
+            check("状态已持久化", r.json()["status"] == "contacted")
+
         r = await c.get("/api/v1/leads/nonexistent")
         check("GET /leads/404", r.status_code == 404)
 
-        # === 手动分析 ===
         print("\n🔍 手动分析")
         r = await c.post("/api/v1/analyze", json={
-            "id": "manual_001", "platform": "douyin",
-            "content": "想学这个，多少钱？有课程吗",
-            "author_id": "u_m", "author_name": "手动测试",
-            "post_id": "p1", "post_title": "AI教程",
+            "id": "m1", "platform": "douyin", "content": "想学这个，多少钱？",
+            "author_id": "u1", "author_name": "测试", "post_id": "p1", "post_title": "AI",
         })
         check("POST /analyze 200", r.status_code == 200)
         s = r.json()
@@ -90,16 +95,19 @@ async def test_api():
         check("intent=potential_lead", s["intent"] == "potential_lead")
         check("识别关键词", len(s["keywords"]) >= 1)
 
-        # 负面测试
         r = await c.post("/api/v1/analyze", json={
-            "id": "manual_002", "platform": "douyin",
-            "content": "哈哈哈哈笑死我了",
-            "author_id": "u_m2", "author_name": "测试2",
-            "post_id": "p1", "post_title": "AI教程",
+            "id": "m2", "platform": "douyin", "content": "哈哈哈哈笑死我了",
+            "author_id": "u2", "author_name": "测试2", "post_id": "p1", "post_title": "AI",
         })
         check("负面: score<0.4", r.json()["score"] < 0.4)
 
-    # === 汇总 ===
+        print("\n📊 统计")
+        r = await c.get("/api/v1/stats")
+        check("GET /stats", r.status_code == 200)
+        st = r.json()
+        check("total_analyzed>=10", st["total_analyzed"] >= 10)
+        check("leads.total>=3", st["leads"]["total"] >= 3)
+
     print(f"\n{'='*40}")
     print(f"📊 结果: {PASS} 通过, {FAIL} 失败")
     if FAIL == 0:
