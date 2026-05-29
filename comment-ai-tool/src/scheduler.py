@@ -31,15 +31,21 @@ class CommentScheduler:
 
     def _build_monitor(self, account):
         """根据平台类型构建 Monitor 实例"""
-        config = {}
-        if account.config:
-            try:
-                config = json.loads(account.config)
-            except json.JSONDecodeError:
-                pass
+        # 解析账号配置（JSON字符串 → dict）
+        config_str = account.config or ""
+        try:
+            config = json.loads(config_str) if config_str else {}
+        except json.JSONDecodeError:
+            config = {}
 
         platform = account.platform
         if platform == "douyin":
+            # 优先 Playwright 浏览器模式（处理 X-Bogus 签名）
+            cookie = config.get("cookie", "")
+            if cookie:
+                from src.monitors.douyin_browser_monitor import DouyinBrowserMonitor
+                return DouyinBrowserMonitor(cookie=cookie)
+            # 降级到开放平台 API
             from src.monitors.douyin_monitor import DouyinMonitor
             return DouyinMonitor(
                 access_token=config.get("access_token", settings.douyin_access_token),
