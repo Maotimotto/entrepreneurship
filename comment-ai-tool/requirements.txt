@@ -8,3 +8,4 @@ openai==1.50.0
 sqlalchemy==2.0.35
 aiomysql==0.2.0
 playwright>=1.40.0
+markitdown>=0.1.6

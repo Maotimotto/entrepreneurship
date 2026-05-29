@@ -374,3 +374,161 @@ async def demo_run():
         "replies_generated": replies_n,
         "results": results,
     }
+
+
+# ═══════════ 视频生产 (MoneyPrinterTurbo) ═══════════
+
+@router.get("/producer/status")
+async def producer_status():
+    """检查 MoneyPrinterTurbo 服务状态"""
+    from src.producers.video_producer import video_producer
+    healthy = await video_producer.health_check()
+    return {"ok": healthy, "base_url": video_producer.base_url}
+
+
+@router.post("/producer/generate")
+async def producer_generate(data: dict):
+    """从评论关键词生成视频
+
+    Body: { "topic": "...", "keywords": [...], "script": "...", "aspect": "9:16" }
+    """
+    from src.producers.video_producer import video_producer, VideoRequest
+
+    topic = data.get("topic", "")
+    keywords = data.get("keywords", [])
+    script = data.get("script", "")
+    aspect = data.get("aspect", "9:16")
+
+    if not topic:
+        raise HTTPException(400, "topic 不能为空")
+
+    task = await video_producer.produce_from_comments(
+        topic=topic,
+        keywords=keywords,
+        script=script,
+        aspect=aspect,
+    )
+
+    return {
+        "ok": task.status == "completed",
+        "task_id": task.task_id,
+        "status": task.status,
+        "video_url": task.video_url,
+        "error": task.error,
+    }
+
+
+@router.get("/producer/task/{task_id}")
+async def producer_task_status(task_id: str):
+    """查询视频生成任务状态"""
+    from src.producers.video_producer import video_producer
+    task = await video_producer.query_task(task_id)
+    return {
+        "task_id": task.task_id,
+        "status": task.status,
+        "video_url": task.video_url,
+        "error": task.error,
+    }
+
+
+# ═══════════ 内容摄入 (MarkItDown) ═══════════
+
+@router.post("/ingest/file")
+async def ingest_file(data: dict):
+    """摄入单个文件 → Markdown
+
+    Body: { "file_path": "...", "title": "...", "save_to_obsidian": true }
+    """
+    from src.ingestors.content_ingestor import content_ingestor
+    from config.settings import settings
+
+    file_path = data.get("file_path", "")
+    title = data.get("title", "")
+    save_to_obsidian = data.get("save_to_obsidian", settings.obsidian_auto_save)
+
+    if not file_path:
+        raise HTTPException(400, "file_path 不能为空")
+
+    if save_to_obsidian:
+        result = content_ingestor.ingest_to_obsidian(
+            file_path=file_path,
+            vault_path=settings.obsidian_vault_path,
+            title=title,
+        )
+    else:
+        result = content_ingestor.ingest_file(file_path, title)
+
+    return {
+        "ok": result.success,
+        "title": result.title,
+        "markdown_length": len(result.markdown),
+        "error": result.error,
+    }
+
+
+@router.post("/ingest/directory")
+async def ingest_directory(data: dict):
+    """批量摄入目录文件
+
+    Body: { "dir_path": "...", "extensions": [".pdf", ".docx"], "save_to_obsidian": true }
+    """
+    from src.ingestors.content_ingestor import content_ingestor
+    from config.settings import settings
+
+    dir_path = data.get("dir_path", "")
+    extensions = data.get("extensions")
+    save_to_obsidian = data.get("save_to_obsidian", settings.obsidian_auto_save)
+
+    if not dir_path:
+        raise HTTPException(400, "dir_path 不能为空")
+
+    results = content_ingestor.ingest_directory(dir_path, extensions)
+
+    if save_to_obsidian:
+        for r in results:
+            if r.success:
+                content_ingestor.ingest_to_obsidian(
+                    file_path=r.source_path,
+                    vault_path=settings.obsidian_vault_path,
+                    title=r.title,
+                )
+
+    return {
+        "ok": True,
+        "total": len(results),
+        "success": sum(1 for r in results if r.success),
+        "failed": sum(1 for r in results if not r.success),
+        "files": [{"path": r.source_path, "title": r.title, "ok": r.success} for r in results],
+    }
+
+
+@router.post("/ingest/url")
+async def ingest_url(data: dict):
+    """摄入 URL 内容（YouTube / 网页）
+
+    Body: { "url": "...", "save_to_obsidian": true }
+    """
+    from src.ingestors.content_ingestor import content_ingestor
+    from config.settings import settings
+
+    url = data.get("url", "")
+    save_to_obsidian = data.get("save_to_obsidian", settings.obsidian_auto_save)
+
+    if not url:
+        raise HTTPException(400, "url 不能为空")
+
+    result = content_ingestor.ingest_url(url)
+
+    if save_to_obsidian and result.success:
+        content_ingestor.ingest_to_obsidian(
+            file_path=url,
+            vault_path=settings.obsidian_vault_path,
+            title=result.title,
+        )
+
+    return {
+        "ok": result.success,
+        "title": result.title,
+        "markdown_length": len(result.markdown),
+        "error": result.error,
+    }

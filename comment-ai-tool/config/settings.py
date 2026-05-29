@@ -5,7 +5,7 @@ from typing import Optional
 
 class Settings(BaseSettings):
     # === 数据库 ===
-    db_url: str = "mysql+aiomysql://root:123456@localhost:3306/comment_ai"
+    db_url: str = "mysql+asyncmy://commentai:comment_ai_pass@localhost:3306/comment_ai"
 
     # === AI ===
     ai_provider: str = "openai"
@@ -28,6 +28,14 @@ class Settings(BaseSettings):
     # === B站 ===
     bilibili_cookie: str = ""
     bilibili_csrf: str = ""
+
+    # === MoneyPrinterTurbo ===
+    mpt_base_url: str = "http://localhost:8080"
+    mpt_enabled: bool = False
+
+    # === Obsidian ===
+    obsidian_vault_path: str = "/mnt/c/Users/24961/Documents/大模型笔记"
+    obsidian_auto_save: bool = True
 
     # === 服务 ===
     server_host: str = "0.0.0.0"
