@@ -89,10 +89,10 @@ class DouyinBrowserMonitor:
         try:
             # 访问视频页，触发评论加载
             url = f"https://www.douyin.com/video/{aweme_id}"
-            await page.goto(url, wait_until="networkidle", timeout=30000)
+            await page.goto(url, wait_until="domcontentloaded", timeout=60000)
 
             # 等待评论区加载
-            await page.wait_for_timeout(3000)
+            await page.wait_for_timeout(5000)
 
             # 滚动触发更多评论加载
             for _ in range(2):
