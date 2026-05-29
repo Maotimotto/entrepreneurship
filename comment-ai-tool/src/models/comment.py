@@ -23,7 +23,7 @@ class Comment(BaseModel):
     post_title: str                  # 作品标题
     parent_id: Optional[str] = None  # 父评论ID (回复)
     likes: int = 0                   # 点赞数
-    created_at: Optional[datetime] = None      # 评论时间
+    created_at: Optional[datetime] = None  # 评论时间
     raw_data: dict = {}              # 原始数据
 
 
