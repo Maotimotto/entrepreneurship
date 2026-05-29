@@ -3,178 +3,544 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>评论AI — 控制台</title>
+  <title>评论AI — 管理平台</title>
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
-    :root{--bg:#0f1117;--s1:#1a1d27;--s2:#242836;--bd:#2e3347;--t1:#e4e4e7;--t2:#9ca3af;--a1:#6366f1;--a2:#818cf8;--cy:#22d3ee;--gn:#10b981;--yl:#f59e0b;--rd:#ef4444;--pk:#f472b6;--or:#fb923c}
+    :root{--bg:#0f1117;--s1:#1a1d27;--s2:#242836;--bd:#2e3347;--t1:#e4e4e7;--t2:#9ca3af;--a1:#6366f1;--a2:#818cf8;--cy:#22d3ee;--gn:#10b981;--yl:#f59e0b;--rd:#ef4444;--pn:#f472b6}
     body{font-family:'SF Pro',-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--t1);min-height:100vh}
+    a{color:var(--a2);text-decoration:none}
 
-    .hdr{padding:14px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
-    .hdr h1{font-size:17px;font-weight:700}.hdr h1 span{color:var(--cy)}
-    .hdr .st{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t2)}
-    .hdr .dot{width:6px;height:6px;border-radius:50%;background:var(--gn);animation:pls 2s infinite}
-    @keyframes pls{0%,100%{opacity:1}50%{opacity:.4}}
+    /* Layout */
+    .sidebar{position:fixed;left:0;top:0;bottom:0;width:200px;background:var(--s1);border-right:1px solid var(--bd);padding:16px 0;z-index:10}
+    .sidebar h1{font-size:16px;padding:0 16px 16px;border-bottom:1px solid var(--bd);margin-bottom:8px}
+    .sidebar h1 span{color:var(--cy)}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;font-size:13px;color:var(--t2);transition:.15s}
+    .nav-item:hover,.nav-item.active{color:var(--t1);background:var(--s2)}
+    .nav-item.active{border-right:2px solid var(--a1)}
+    .main{margin-left:200px;padding:20px 24px}
 
-    .wrap{max-width:900px;margin:0 auto;padding:16px}
+    /* Header */
+    .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+    .page-title{font-size:20px;font-weight:700}
+    .badge{display:inline-block;background:var(--a1);color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;margin-left:8px}
 
-    /* 流程图 */
-    .flow{display:flex;align-items:center;justify-content:center;gap:8px;margin:20px 0;flex-wrap:wrap}
-    .flow-step{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:10px 14px;font-size:12px;font-weight:600;text-align:center;min-width:100px}
-    .flow-step .icon{font-size:18px;margin-bottom:4px}
-    .flow-arrow{color:var(--t2);font-size:16px}
+    /* Stats Grid */
+    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+    .stat{background:var(--s1);border:1px solid var(--bd);border-radius:10px;padding:16px}
+    .stat .label{font-size:11px;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+    .stat .value{font-size:28px;font-weight:700}
+    .stat .value.a{color:var(--a2)}.stat .value.c{color:var(--cy)}.stat .value.g{color:var(--gn)}.stat .value.y{color:var(--yl)}
 
-    /* Stats */
-    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}
-    .stat{background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:14px}
-    .stat .lb{font-size:10px;color:var(--t2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:5px}
-    .stat .vl{font-size:26px;font-weight:700;letter-spacing:-1px}
-    .stat .vl.a{color:var(--a2)}.stat .vl.c{color:var(--cy)}.stat .vl.g{color:var(--gn)}.stat .vl.y{color:var(--yl)}
+    /* Table */
+    .card{background:var(--s1);border:1px solid var(--bd);border-radius:10px;overflow:hidden;margin-bottom:16px}
+    .card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--bd)}
+    .card-header h3{font-size:14px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px 14px;text-align:left;font-size:12px;border-bottom:1px solid var(--bd)}
+    th{color:var(--t2);font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:.5px}
+    tr:hover{background:var(--s2)}
 
-    /* 情感统计 */
-    .sentiment-bar{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
-    .sentiment-item{display:flex;align-items:center;gap:6px;font-size:12px;padding:6px 12px;background:var(--s1);border:1px solid var(--bd);border-radius:6px}
-    .sentiment-dot{width:8px;height:8px;border-radius:50%}
-    .sentiment-dot.pos{background:var(--gn)}.sentiment-dot.neg{background:var(--rd)}.sentiment-dot.neu{background:var(--t2)}.sentiment-dot.mix{background:var(--yl)}
-
-    /* Actions */
-    .act{display:flex;gap:8px;margin:14px 0}
-    .btn{padding:8px 16px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:.2s}
+    /* Forms & Controls */
+    .filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+    select,input[type=text],input[type=datetime-local],input[type=number]{background:var(--s2);border:1px solid var(--bd);border-radius:6px;color:var(--t1);padding:7px 12px;font-size:12px;outline:none}
+    select:focus,input:focus{border-color:var(--a1)}
+    .btn{padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:.15s}
     .btn-p{background:var(--a1);color:#fff}.btn-p:hover{background:var(--a2)}
     .btn-g{background:transparent;color:var(--t2);border:1px solid var(--bd)}.btn-g:hover{border-color:var(--a1);color:var(--t1)}
+    .btn-r{background:var(--rd);color:#fff}.btn-r:hover{opacity:.8}
+    .btn-sm{padding:4px 10px;font-size:11px}
     .btn:disabled{opacity:.4;cursor:not-allowed}
 
-    /* Feed */
-    .feed{display:grid;gap:10px}
-    .card{background:var(--s1);border:1px solid var(--bd);border-radius:8px;overflow:hidden;animation:su .3s ease-out both}
-    .card:hover{border-color:var(--a1)}
-    @keyframes su{from{opacity:0;transform:translateY(8px)}}
+    /* Tags */
+    .tag{display:inline-block;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:600}
+    .tag-dy{background:rgba(0,0,0,.3);color:#fe2c55}
+    .tag-xhs{background:rgba(255,45,85,.15);color:#ff2d55}
+    .tag-wx{background:rgba(7,193,96,.15);color:#07c160}
+    .tag-bili{background:rgba(0,161,214,.15);color:#00a1d6}
+    .tag-active{background:rgba(16,185,129,.15);color:var(--gn)}
+    .tag-paused{background:rgba(245,158,11,.15);color:var(--yl)}
+    .tag-error{background:rgba(239,68,68,.15);color:var(--rd)}
+    .tag-new{background:rgba(99,102,241,.15);color:var(--a2)}
+    .tag-contacted{background:rgba(34,211,238,.15);color:var(--cy)}
+    .tag-converted{background:rgba(16,185,129,.15);color:var(--gn)}
+    .tag-lost{background:rgba(156,163,175,.1);color:var(--t2)}
+    .tag-high{background:rgba(239,68,68,.15);color:var(--rd)}
+    .tag-medium{background:rgba(245,158,11,.15);color:var(--yl)}
+    .tag-low{background:rgba(156,163,175,.1);color:var(--t2)}
 
-    .ct{display:flex;align-items:center;justify-content:space-between;padding:12px 14px 8px}
-    .cu{display:flex;align-items:center;gap:8px}
-    .av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#fff}
-    .un{font-size:12px;font-weight:600}
-    .badges{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-    .bd{padding:2px 7px;border-radius:999px;font-size:10px;font-weight:700}
-    .bd-h{background:rgba(99,102,241,.2);color:var(--a2)}.bd-m{background:rgba(245,158,11,.15);color:var(--yl)}.bd-l{background:rgba(156,163,175,.1);color:var(--t2)}
-    .bd-pos{background:rgba(16,185,129,.15);color:var(--gn)}.bd-neg{background:rgba(239,68,68,.15);color:var(--rd)}.bd-neu{background:rgba(156,163,175,.1);color:var(--t2)}
-    .bd-cat{background:rgba(34,211,238,.15);color:var(--cy)}
+    /* Score bar */
+    .score-bar{display:flex;align-items:center;gap:6px}
+    .score-fill{width:50px;height:4px;background:var(--bd);border-radius:2px;overflow:hidden}
+    .score-fill div{height:100%;border-radius:2px}
 
-    .cb{padding:0 14px 10px}
-    .ct-text{font-size:13px;line-height:1.55;margin-bottom:8px}
-    .tags{display:flex;gap:5px;flex-wrap:wrap}
-    .tg{font-size:9px;padding:2px 6px;border-radius:3px}
-    .tg-i{background:rgba(99,102,241,.12);color:var(--a2)}
-    .tg-u{background:rgba(239,68,68,.12);color:var(--rd)}
-    .tg-k{background:rgba(34,211,238,.12);color:var(--cy)}
-    .tg-cat{background:rgba(251,146,60,.12);color:var(--or)}
+    /* Modal */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:none;align-items:center;justify-content:center}
+    .modal-overlay.show{display:flex}
+    .modal{background:var(--s1);border:1px solid var(--bd);border-radius:12px;width:480px;max-height:80vh;overflow-y:auto}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid var(--bd)}
+    .modal-header h3{font-size:15px}
+    .modal-close{background:none;border:none;color:var(--t2);font-size:18px;cursor:pointer}
+    .modal-body{padding:16px}
+    .form-group{margin-bottom:14px}
+    .form-group label{display:block;font-size:11px;color:var(--t2);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+    .form-group input,.form-group select,.form-group textarea{width:100%}
+    .form-group textarea{background:var(--s2);border:1px solid var(--bd);border-radius:6px;color:var(--t1);padding:7px 12px;font-size:12px;min-height:60px;resize:vertical;outline:none}
+    .modal-footer{display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--bd)}
 
-    .rp{margin:0 14px 12px;padding:8px 12px;background:var(--s2);border-radius:6px;border-left:2px solid var(--gn)}
-    .rp .lb{font-size:9px;color:var(--gn);font-weight:600;margin-bottom:2px;text-transform:uppercase;letter-spacing:.4px}
-    .rp .tx{font-size:12px;line-height:1.45}
+    /* Pagination */
+    .pagination{display:flex;align-items:center;justify-content:space-between;padding:10px 0;font-size:12px;color:var(--t2)}
+    .page-btns{display:flex;gap:4px}
+    .page-btn{padding:5px 10px;border:1px solid var(--bd);border-radius:4px;cursor:pointer;background:transparent;color:var(--t2);font-size:11px}
+    .page-btn.active{background:var(--a1);color:#fff;border-color:var(--a1)}
 
-    .empty{text-align:center;padding:48px 16px;color:var(--t2)}
-    .empty .ic{font-size:36px;margin-bottom:10px}
-    .empty p{font-size:13px;max-width:340px;margin:0 auto;line-height:1.55}
+    /* Section */
+    .section{display:none}
+    .section.active{display:block}
 
-    .ld{text-align:center;padding:36px;color:var(--t2)}
-    .sp{display:inline-block;width:24px;height:24px;border:2px solid var(--bd);border-top-color:var(--a1);border-radius:50%;animation:spn .7s linear infinite;margin-bottom:8px}
-    @keyframes spn{to{transform:rotate(360deg)}}
+    /* Loading */
+    .loading{text-align:center;padding:40px;color:var(--t2)}
+    .spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--bd);border-top-color:var(--a1);border-radius:50%;animation:spin .6s linear infinite;margin-bottom:8px}
+    @keyframes spin{to{transform:rotate(360deg)}}
 
-    @media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}.flow{flex-direction:column}.flow-arrow{transform:rotate(90deg)}}
+    @media(max-width:800px){.stats{grid-template-columns:repeat(2,1fr)}.sidebar{display:none}.main{margin-left:0}}
   </style>
 </head>
 <body>
-  <div class="hdr">
+  <!-- Sidebar -->
+  <div class="sidebar">
     <h1>评论<span>AI</span></h1>
-    <div class="st"><div class="dot"></div> v0.3.0</div>
+    <div class="nav-item active" onclick="showSection('dashboard')">📊 数据看板</div>
+    <div class="nav-item" onclick="showSection('accounts')">📱 平台账号</div>
+    <div class="nav-item" onclick="showSection('leads')">👤 潜客管理</div>
+    <div class="nav-item" onclick="showSection('logs')">📋 分析日志</div>
+    <div class="nav-item" onclick="showSection('replies')">💬 回复记录</div>
+    <div class="nav-item" onclick="runDemo()">▶ 运行演示</div>
   </div>
 
-  <div class="wrap">
-    <div class="flow">
-      <div class="flow-step"><div class="icon">📱</div>评论采集</div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-step"><div class="icon">🧠</div>意图识别</div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-step"><div class="icon">❤️</div>情感分析</div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-step"><div class="icon">🏷️</div>潜客分类</div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-step"><div class="icon">💬</div>智能回复</div>
-      <div class="flow-arrow">→</div>
-      <div class="flow-step"><div class="icon">📊</div>私域建档</div>
+  <div class="main">
+    <!-- ═══ Dashboard ═══ -->
+    <div class="section active" id="sec-dashboard">
+      <div class="page-header"><div class="page-title">数据看板</div></div>
+      <div class="stats" id="overview-stats"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="card"><div class="card-header"><h3>按平台</h3></div><div id="stats-platform" style="padding:14px"></div></div>
+        <div class="card"><div class="card-header"><h3>按意图</h3></div><div id="stats-intent" style="padding:14px"></div></div>
+      </div>
+      <div class="card" style="margin-top:16px"><div class="card-header"><h3>近7天趋势</h3></div><div id="stats-trend" style="padding:14px"></div></div>
     </div>
 
-    <div class="stats">
-      <div class="stat"><div class="lb">评论</div><div class="vl a" id="sT">—</div></div>
-      <div class="stat"><div class="lb">潜客</div><div class="vl c" id="sL">—</div></div>
-      <div class="stat"><div class="lb">回复</div><div class="vl g" id="sR">—</div></div>
-      <div class="stat"><div class="lb">转化率</div><div class="vl y" id="sP">—</div></div>
+    <!-- ═══ Accounts ═══ -->
+    <div class="section" id="sec-accounts">
+      <div class="page-header">
+        <div class="page-title">平台账号管理</div>
+        <button class="btn btn-p" onclick="showAccountModal()">+ 添加账号</button>
+      </div>
+      <div class="filter-bar">
+        <select id="acc-filter-platform" onchange="loadAccounts()">
+          <option value="">全部平台</option>
+          <option value="douyin">抖音</option>
+          <option value="xiaohongshu">小红书</option>
+          <option value="wechat_video">视频号</option>
+          <option value="bilibili">B站</option>
+        </select>
+        <select id="acc-filter-status" onchange="loadAccounts()">
+          <option value="">全部状态</option>
+          <option value="active">启用</option>
+          <option value="paused">暂停</option>
+          <option value="error">异常</option>
+        </select>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>ID</th><th>平台</th><th>账号</th><th>昵称</th><th>状态</th><th>备注</th><th>创建时间</th><th>操作</th></tr></thead>
+          <tbody id="accounts-tbody"></tbody>
+        </table>
+      </div>
     </div>
 
-    <div class="sentiment-bar" id="sentBar" style="display:none">
-      <div class="sentiment-item"><div class="sentiment-dot pos"></div> 正面 <strong id="sPos">0</strong></div>
-      <div class="sentiment-item"><div class="sentiment-dot neg"></div> 负面 <strong id="sNeg">0</strong></div>
-      <div class="sentiment-item"><div class="sentiment-dot neu"></div> 中性 <strong id="sNeu">0</strong></div>
-      <div class="sentiment-item"><div class="sentiment-dot mix"></div> 混合 <strong id="sMix">0</strong></div>
+    <!-- ═══ Leads ═══ -->
+    <div class="section" id="sec-leads">
+      <div class="page-header">
+        <div class="page-title">潜客管理 <span class="badge" id="leads-count">0</span></div>
+        <button class="btn btn-g" onclick="exportLeads()">📥 导出CSV</button>
+      </div>
+      <div class="filter-bar">
+        <select id="lead-filter-platform" onchange="loadLeads()">
+          <option value="">全部平台</option>
+          <option value="douyin">抖音</option>
+          <option value="xiaohongshu">小红书</option>
+          <option value="wechat_video">视频号</option>
+          <option value="bilibili">B站</option>
+        </select>
+        <select id="lead-filter-status" onchange="loadLeads()">
+          <option value="">全部状态</option>
+          <option value="new">新潜客</option>
+          <option value="contacted">已联系</option>
+          <option value="converted">已转化</option>
+          <option value="lost">已流失</option>
+        </select>
+        <input type="number" id="lead-filter-score" placeholder="最低评分" step="0.1" min="0" max="1" style="width:100px" onchange="loadLeads()">
+        <input type="datetime-local" id="lead-filter-start" onchange="loadLeads()">
+        <input type="datetime-local" id="lead-filter-end" onchange="loadLeads()">
+        <button class="btn btn-g btn-sm" onclick="clearLeadFilters()">清除</button>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>ID</th><th>平台</th><th>昵称</th><th>评分</th><th>首条评论</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
+          <tbody id="leads-tbody"></tbody>
+        </table>
+        <div class="pagination" id="leads-pagination"></div>
+      </div>
     </div>
 
-    <div class="act">
-      <button class="btn btn-p" onclick="run()" id="rBtn">▶ 运行演示</button>
-      <button class="btn btn-g" onclick="clr()">清空</button>
+    <!-- ═══ Logs ═══ -->
+    <div class="section" id="sec-logs">
+      <div class="page-header"><div class="page-title">分析日志</div></div>
+      <div class="filter-bar">
+        <select id="log-filter-platform" onchange="loadLogs()">
+          <option value="">全部平台</option>
+          <option value="douyin">抖音</option>
+          <option value="xiaohongshu">小红书</option>
+          <option value="wechat_video">视频号</option>
+          <option value="bilibili">B站</option>
+        </select>
+        <select id="log-filter-intent" onchange="loadLogs()">
+          <option value="">全部意图</option>
+          <option value="potential_lead">潜客</option>
+          <option value="inquiry">咨询</option>
+          <option value="complaint">投诉</option>
+          <option value="praise">好评</option>
+          <option value="spam">垃圾</option>
+          <option value="neutral">中立</option>
+        </select>
+        <input type="text" id="log-filter-author" placeholder="搜索用户昵称" style="width:140px" onkeyup="debounceLoadLogs()">
+        <input type="datetime-local" id="log-filter-start" onchange="loadLogs()">
+        <input type="datetime-local" id="log-filter-end" onchange="loadLogs()">
+        <button class="btn btn-g btn-sm" onclick="clearLogFilters()">清除</button>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>ID</th><th>平台</th><th>用户</th><th>评论</th><th>评分</th><th>意图</th><th>回复</th><th>时间</th></tr></thead>
+          <tbody id="logs-tbody"></tbody>
+        </table>
+        <div class="pagination" id="logs-pagination"></div>
+      </div>
     </div>
 
-    <div class="feed" id="fd">
-      <div class="empty"><div class="ic">💬</div><p>点击「运行演示」查看 AI 如何识别意图、分析情感、分类潜客</p></div>
+    <!-- ═══ Replies ═══ -->
+    <div class="section" id="sec-replies">
+      <div class="page-header"><div class="page-title">回复记录</div></div>
+      <div class="filter-bar">
+        <select id="reply-filter-platform" onchange="loadReplies()">
+          <option value="">全部平台</option>
+          <option value="douyin">抖音</option>
+          <option value="xiaohongshu">小红书</option>
+          <option value="wechat_video">视频号</option>
+          <option value="bilibili">B站</option>
+        </select>
+        <select id="reply-filter-status" onchange="loadReplies()">
+          <option value="">全部状态</option>
+          <option value="sent">已发送</option>
+          <option value="pending">待发送</option>
+          <option value="failed">失败</option>
+        </select>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr><th>ID</th><th>平台</th><th>评论ID</th><th>回复内容</th><th>状态</th><th>错误信息</th><th>时间</th></tr></thead>
+          <tbody id="replies-tbody"></tbody>
+        </table>
+        <div class="pagination" id="replies-pagination"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Account Modal -->
+  <div class="modal-overlay" id="account-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-title">添加账号</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="acc-edit-id">
+        <div class="form-group"><label>平台</label>
+          <select id="acc-platform">
+            <option value="douyin">抖音</option>
+            <option value="xiaohongshu">小红书</option>
+            <option value="wechat_video">视频号</option>
+            <option value="bilibili">B站</option>
+          </select>
+        </div>
+        <div class="form-group"><label>平台账号ID</label><input type="text" id="acc-account-id" placeholder="如: 抖音uid / B站mid"></div>
+        <div class="form-group"><label>账号昵称</label><input type="text" id="acc-account-name" placeholder="显示名称"></div>
+        <div class="form-group"><label>主页链接</label><input type="text" id="acc-account-url" placeholder="https://..."></div>
+        <div class="form-group"><label>凭证配置 (JSON)</label><textarea id="acc-config" placeholder='{"cookie":"...","token":"..."}'></textarea></div>
+        <div class="form-group"><label>备注</label><textarea id="acc-remark" placeholder="运营备注"></textarea></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-g" onclick="closeModal()">取消</button>
+        <button class="btn btn-p" onclick="saveAccount()">保存</button>
+      </div>
     </div>
   </div>
 
   <script>
-    const C=['#6366f1','#22d3ee','#10b981','#f59e0b','#ef4444','#a78bfa','#f472b6','#34d399','#fbbf24','#fb923c'];
+    const API = '/api/v1';
+    const PLAT_LABELS = {douyin:'抖音',xiaohongshu:'小红书',wechat_video:'视频号',bilibili:'B站'};
+    const PLAT_TAG = {douyin:'tag-dy',xiaohongshu:'tag-xhs',wechat_video:'tag-wx',bilibili:'tag-bili'};
+    const STATUS_LABELS = {active:'启用',paused:'暂停',error:'异常',new:'新潜客',contacted:'已联系',converted:'已转化',lost:'已流失',sent:'已发送',pending:'待发送',failed:'失败'};
 
-    function sentLabel(s){return{positive:'😊 正面',negative:'😤 负面',neutral:'😐 中性',mixed:'🤔 混合'}[s]||s}
-    function sentClass(s){return{positive:'bd-pos',negative:'bd-neg',neutral:'bd-neu',mixed:'bd-m'}[s]||'bd-neu'}
-    function catLabel(c){return{buyer:'🛒 购买',learner:'📚 学习',partner:'🤝 合作',inquirer:'❓ 咨询',follower:'👀 关注',spam:'🚫 垃圾'}[c]||c}
-
-    async function run(){
-      const b=document.getElementById('rBtn');b.disabled=true;b.textContent='⏳ 分析中...';
-      document.getElementById('fd').innerHTML='<div class="ld"><div class="sp"></div><div>AI 正在分析...</div></div>';
-      try{
-        const r=await fetch('/api/v1/demo/run',{method:'POST'}),d=await r.json();
-        document.getElementById('sT').textContent=d.total_comments;
-        document.getElementById('sL').textContent=d.leads_found;
-        document.getElementById('sR').textContent=d.replies_generated;
-        document.getElementById('sP').textContent=d.total_comments?Math.round(d.leads_found/d.total_comments*100)+'%':'0%';
-
-        if(d.sentiment_summary){
-          document.getElementById('sentBar').style.display='flex';
-          document.getElementById('sPos').textContent=d.sentiment_summary.positive||0;
-          document.getElementById('sNeg').textContent=d.sentiment_summary.negative||0;
-          document.getElementById('sNeu').textContent=d.sentiment_summary.neutral||0;
-          document.getElementById('sMix').textContent=d.sentiment_summary.mixed||0;
-        }
-
-        const f=document.getElementById('fd');f.innerHTML='';
-        d.results.forEach((x,i)=>{
-          const el=document.createElement('div');el.className='card';el.style.animationDelay=`${i*.05}s`;
-          const sc=x.score>=.7?'bd-h':x.score>=.4?'bd-m':'bd-l';
-          const sl=x.score>=.7?'🔥 高意向':x.score>=.4?'👀 中意向':'💤 低意向';
-          el.innerHTML=`
-            <div class="ct">
-              <div class="cu"><div class="av" style="background:${C[i%10]}">${x.author[0]}</div><div class="un">${x.author}</div></div>
-              <div class="badges">
-                <div class="bd ${sentClass(x.sentiment)}">${sentLabel(x.sentiment)}</div>
-                ${x.category?`<div class="bd bd-cat">${catLabel(x.category)}</div>`:''}
-                <div class="bd ${sc}">${sl} ${(x.score*100).toFixed(0)}分</div>
-              </div>
-            </div>
-            <div class="cb"><div class="ct-text">${x.comment}</div><div class="tags"><span class="tg tg-i">${x.intent}</span><span class="tg tg-u">${x.urgency}</span>${x.keywords.map(k=>`<span class="tg tg-k">${k}</span>`).join('')}${x.category?`<span class="tg tg-cat">${x.category}</span>`:''}</div></div>
-            ${x.reply?`<div class="rp"><div class="lb">💬 AI 回复</div><div class="tx">${x.reply}</div></div>`:''}`;
-          f.appendChild(el);
-        });
-      }catch(e){document.getElementById('fd').innerHTML=`<div class="empty"><div class="ic">⚠️</div><p>${e.message}</p></div>`}
-      finally{b.disabled=false;b.textContent='▶ 运行演示'}
+    function showSection(name) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById('sec-' + name).classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      event.target.classList.add('active');
+      if (name === 'dashboard') loadDashboard();
+      if (name === 'accounts') loadAccounts();
+      if (name === 'leads') loadLeads();
+      if (name === 'logs') loadLogs();
+      if (name === 'replies') loadReplies();
     }
-    function clr(){document.getElementById('fd').innerHTML='<div class="empty"><div class="ic">💬</div><p>点击「运行演示」开始</p></div>';['sT','sL','sR','sP'].forEach(i=>document.getElementById(i).textContent='—');document.getElementById('sentBar').style.display='none'}
+
+    async function api(path, opts = {}) {
+      const r = await fetch(API + path, { headers: {'Content-Type':'application/json'}, ...opts });
+      return r.json();
+    }
+
+    // ─── Dashboard ───
+    async function loadDashboard() {
+      const [ov, bp, bi, tr] = await Promise.all([
+        api('/stats/overview'), api('/stats/by-platform'),
+        api('/stats/by-intent'), api('/stats/trend?days=7'),
+      ]);
+      document.getElementById('overview-stats').innerHTML = `
+        <div class="stat"><div class="label">平台账号</div><div class="value a">${ov.accounts}</div></div>
+        <div class="stat"><div class="label">潜客总数</div><div class="value c">${ov.leads}</div></div>
+        <div class="stat"><div class="label">分析评论</div><div class="value g">${ov.analyzed}</div></div>
+        <div class="stat"><div class="label">已回复</div><div class="value y">${ov.replies_sent}</div></div>`;
+      document.getElementById('stats-platform').innerHTML = bp.length ? bp.map(p =>
+        `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bd)">
+          <span class="tag ${PLAT_TAG[p.platform]||''}">${PLAT_LABELS[p.platform]||p.platform}</span>
+          <span>${p.leads} 潜客 · 均分 ${p.avg_score}</span></div>`).join('') : '<div style="color:var(--t2)">暂无数据</div>';
+      document.getElementById('stats-intent').innerHTML = bi.length ? bi.map(i =>
+        `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bd)">
+          <span>${i.intent}</span><span>${i.count} 条</span></div>`).join('') : '<div style="color:var(--t2)">暂无数据</div>';
+      document.getElementById('stats-trend').innerHTML = tr.length ? `<table><thead><tr><th>日期</th><th>数量</th><th>均分</th></tr></thead><tbody>${tr.map(t =>
+        `<tr><td>${t.day}</td><td>${t.count}</td><td>${t.avg_score}</td></tr>`).join('')}</tbody></table>` : '<div style="color:var(--t2)">暂无数据</div>';
+    }
+
+    // ─── Accounts ───
+    async function loadAccounts() {
+      const platform = document.getElementById('acc-filter-platform').value;
+      const status = document.getElementById('acc-filter-status').value;
+      const params = new URLSearchParams();
+      if (platform) params.set('platform', platform);
+      if (status) params.set('status', status);
+      const data = await api('/accounts?' + params);
+      const tbody = document.getElementById('accounts-tbody');
+      tbody.innerHTML = data.accounts.map(a => `<tr>
+        <td>${a.id}</td>
+        <td><span class="tag ${PLAT_TAG[a.platform]||''}">${PLAT_LABELS[a.platform]||a.platform}</span></td>
+        <td>${a.account_id}</td>
+        <td>${a.account_name}</td>
+        <td><span class="tag tag-${a.status}">${STATUS_LABELS[a.status]||a.status}</span></td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${a.remark||'-'}</td>
+        <td>${a.created_at ? new Date(a.created_at).toLocaleString('zh-CN') : '-'}</td>
+        <td><button class="btn btn-g btn-sm" onclick="editAccount(${a.id})">编辑</button>
+            <button class="btn btn-r btn-sm" onclick="deleteAccount(${a.id})" style="margin-left:4px">删除</button></td>
+      </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--t2)">暂无账号，点击上方添加</td></tr>';
+    }
+
+    function showAccountModal(acc) {
+      document.getElementById('acc-edit-id').value = acc ? acc.id : '';
+      document.getElementById('acc-platform').value = acc ? acc.platform : 'douyin';
+      document.getElementById('acc-account-id').value = acc ? acc.account_id : '';
+      document.getElementById('acc-account-name').value = acc ? acc.account_name : '';
+      document.getElementById('acc-account-url').value = acc ? acc.account_url || '' : '';
+      document.getElementById('acc-config').value = acc ? acc.config || '' : '';
+      document.getElementById('acc-remark').value = acc ? acc.remark || '' : '';
+      document.getElementById('modal-title').textContent = acc ? '编辑账号' : '添加账号';
+      document.getElementById('acc-account-id').disabled = !!acc;
+      document.getElementById('account-modal').classList.add('show');
+    }
+
+    function closeModal() { document.getElementById('account-modal').classList.remove('show'); }
+
+    async function saveAccount() {
+      const id = document.getElementById('acc-edit-id').value;
+      const data = {
+        platform: document.getElementById('acc-platform').value,
+        account_id: document.getElementById('acc-account-id').value,
+        account_name: document.getElementById('acc-account-name').value,
+        account_url: document.getElementById('acc-account-url').value || null,
+        config: document.getElementById('acc-config').value || null,
+        remark: document.getElementById('acc-remark').value || null,
+      };
+      if (!data.account_id || !data.account_name) return alert('账号ID和昵称必填');
+      if (id) {
+        const {account_id, ...update} = data;
+        await api('/accounts/' + id, { method: 'PUT', body: JSON.stringify(update) });
+      } else {
+        await api('/accounts', { method: 'POST', body: JSON.stringify(data) });
+      }
+      closeModal(); loadAccounts();
+    }
+
+    async function editAccount(id) {
+      const data = await api('/accounts/' + id);
+      showAccountModal(data);
+    }
+
+    async function deleteAccount(id) {
+      if (!confirm('确认删除？')) return;
+      await api('/accounts/' + id, { method: 'DELETE' });
+      loadAccounts();
+    }
+
+    // ─── Leads ───
+    let leadsPage = 1;
+    async function loadLeads() {
+      const params = new URLSearchParams({page: leadsPage, page_size: 20});
+      const platform = document.getElementById('lead-filter-platform').value;
+      const status = document.getElementById('lead-filter-status').value;
+      const score = document.getElementById('lead-filter-score').value;
+      const start = document.getElementById('lead-filter-start').value;
+      const end = document.getElementById('lead-filter-end').value;
+      if (platform) params.set('platform', platform);
+      if (status) params.set('status', status);
+      if (score) params.set('min_score', score);
+      if (start) params.set('start_time', new Date(start).toISOString());
+      if (end) params.set('end_time', new Date(end).toISOString());
+      const data = await api('/leads?' + params);
+      document.getElementById('leads-count').textContent = data.total;
+      const tbody = document.getElementById('leads-tbody');
+      tbody.innerHTML = data.leads.map(l => {
+        const sc = l.lead_score >= 0.7 ? 'var(--rd)' : l.lead_score >= 0.4 ? 'var(--yl)' : 'var(--t2)';
+        return `<tr>
+          <td>${l.id}</td>
+          <td><span class="tag ${PLAT_TAG[l.platform]||''}">${PLAT_LABELS[l.platform]||l.platform}</span></td>
+          <td>${l.author_name}</td>
+          <td><div class="score-bar"><span>${l.lead_score.toFixed(2)}</span><div class="score-fill"><div style="width:${l.lead_score*100}%;background:${sc}"></div></div></div></td>
+          <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis">${l.first_comment_content||'-'}</td>
+          <td><span class="tag tag-${l.status}">${STATUS_LABELS[l.status]||l.status}</span></td>
+          <td>${l.created_at ? new Date(l.created_at).toLocaleString('zh-CN') : '-'}</td>
+          <td><select class="btn btn-sm" style="background:var(--s2);border:1px solid var(--bd);color:var(--t1)" onchange="updateLeadStatus(${l.id},this.value)">
+            ${['new','contacted','converted','lost'].map(s => `<option value="${s}" ${s===l.status?'selected':''}>${STATUS_LABELS[s]}</option>`).join('')}
+          </select></td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--t2)">暂无潜客数据</td></tr>';
+      renderPagination('leads-pagination', data, (p) => { leadsPage = p; loadLeads(); });
+    }
+
+    function clearLeadFilters() {
+      ['lead-filter-platform','lead-filter-status','lead-filter-score','lead-filter-start','lead-filter-end'].forEach(id => document.getElementById(id).value = '');
+      leadsPage = 1; loadLeads();
+    }
+
+    async function updateLeadStatus(id, status) {
+      await api(`/leads/${id}/status?status=${status}`, {method:'PUT'});
+      loadLeads();
+    }
+
+    function exportLeads() {
+      const platform = document.getElementById('lead-filter-platform').value;
+      const status = document.getElementById('lead-filter-status').value;
+      const params = new URLSearchParams();
+      if (platform) params.set('platform', platform);
+      if (status) params.set('status', status);
+      window.open(API + '/leads/export?' + params, '_blank');
+    }
+
+    // ─── Logs ───
+    let logsPage = 1;
+    let logDebounce;
+    function debounceLoadLogs() { clearTimeout(logDebounce); logDebounce = setTimeout(loadLogs, 400); }
+
+    async function loadLogs() {
+      const params = new URLSearchParams({page: logsPage, page_size: 20});
+      const platform = document.getElementById('log-filter-platform').value;
+      const intent = document.getElementById('log-filter-intent').value;
+      const author = document.getElementById('log-filter-author').value;
+      const start = document.getElementById('log-filter-start').value;
+      const end = document.getElementById('log-filter-end').value;
+      if (platform) params.set('platform', platform);
+      if (intent) params.set('intent', intent);
+      if (author) params.set('author_name', author);
+      if (start) params.set('start_time', new Date(start).toISOString());
+      if (end) params.set('end_time', new Date(end).toISOString());
+      const data = await api('/logs?' + params);
+      const tbody = document.getElementById('logs-tbody');
+      tbody.innerHTML = data.logs.map(l => {
+        const sc = l.score >= 0.7 ? 'var(--rd)' : l.score >= 0.4 ? 'var(--yl)' : 'var(--t2)';
+        return `<tr>
+          <td>${l.id}</td>
+          <td><span class="tag ${PLAT_TAG[l.platform]||''}">${PLAT_LABELS[l.platform]||l.platform}</span></td>
+          <td>${l.author_name||'-'}</td>
+          <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis">${l.comment_content}</td>
+          <td><div class="score-bar"><span>${(l.score||0).toFixed(2)}</span><div class="score-fill"><div style="width:${(l.score||0)*100}%;background:${sc}"></div></div></div></td>
+          <td>${l.intent||'-'}</td>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${l.reply_content||'-'}</td>
+          <td>${l.created_at ? new Date(l.created_at).toLocaleString('zh-CN') : '-'}</td>
+        </tr>`;
+      }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--t2)">暂无日志</td></tr>';
+      renderPagination('logs-pagination', data, (p) => { logsPage = p; loadLogs(); });
+    }
+
+    function clearLogFilters() {
+      ['log-filter-platform','log-filter-intent','log-filter-author','log-filter-start','log-filter-end'].forEach(id => document.getElementById(id).value = '');
+      logsPage = 1; loadLogs();
+    }
+
+    // ─── Replies ───
+    let repliesPage = 1;
+    async function loadReplies() {
+      const params = new URLSearchParams({page: repliesPage, page_size: 20});
+      const platform = document.getElementById('reply-filter-platform').value;
+      const status = document.getElementById('reply-filter-status').value;
+      if (platform) params.set('platform', platform);
+      if (status) params.set('status', status);
+      const data = await api('/replies?' + params);
+      const tbody = document.getElementById('replies-tbody');
+      tbody.innerHTML = data.replies.map(r => `<tr>
+        <td>${r.id}</td>
+        <td><span class="tag ${PLAT_TAG[r.platform]||''}">${PLAT_LABELS[r.platform]||r.platform}</span></td>
+        <td>${r.comment_id||'-'}</td>
+        <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis">${r.reply_content}</td>
+        <td><span class="tag tag-${r.status}">${STATUS_LABELS[r.status]||r.status}</span></td>
+        <td style="color:var(--rd)">${r.error_msg||'-'}</td>
+        <td>${r.created_at ? new Date(r.created_at).toLocaleString('zh-CN') : '-'}</td>
+      </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--t2)">暂无回复记录</td></tr>';
+      renderPagination('replies-pagination', data, (p) => { repliesPage = p; loadReplies(); });
+    }
+
+    // ─── Pagination ───
+    function renderPagination(containerId, data, callback) {
+      const container = document.getElementById(containerId);
+      const total = data.total || 0;
+      const pageSize = data.page_size || 20;
+      const current = data.page || 1;
+      const pages = Math.ceil(total / pageSize);
+      if (pages <= 1) { container.innerHTML = ''; return; }
+      let html = `<div>共 ${total} 条</div><div class="page-btns">`;
+      for (let i = 1; i <= Math.min(pages, 10); i++) {
+        html += `<div class="page-btn ${i===current?'active':''}" onclick="this._cb(${i})">${i}</div>`;
+      }
+      html += '</div>';
+      container.innerHTML = html;
+      container.querySelectorAll('.page-btn').forEach(btn => { btn._cb = callback; });
+    }
+
+    // ─── Demo ───
+    async function runDemo() {
+      if (!confirm('运行演示？将用 mock 数据生成分析记录和潜客。')) return;
+      const data = await api('/demo/run', {method:'POST'});
+      alert(`演示完成\n评论: ${data.total_comments}\n潜客: ${data.leads_found}\n回复: ${data.replies_generated}`);
+      loadDashboard();
+    }
+
+    // ─── Init ───
+    loadDashboard();
   </script>
 </body>
 </html>

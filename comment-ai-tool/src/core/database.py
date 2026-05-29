@@ -1,197 +1,293 @@
-"""数据库模块 — SQLite 持久化"""
-import sqlite3
+"""数据库模块 — SQLAlchemy async + MySQL"""
 import json
-import os
+import logging
 from datetime import datetime
 from typing import Optional
-from src.models.comment import Lead, LeadScore, Platform
-from src.core.logger import logging
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+from sqlalchemy import select, func, update, delete, and_
+from config.settings import settings
+from src.models.comment import Base, PlatformAccount, Lead, AnalysisLog, ReplyLog
 
 logger = logging.getLogger(__name__)
 
-DB_PATH = os.environ.get("COMMENT_AI_DB", "comment_ai.db")
+# ═══════════ Engine & Session ═══════════
+
+engine = create_async_engine(settings.db_url, echo=False, pool_pre_ping=True)
+async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
-def get_db() -> sqlite3.Connection:
-    """获取数据库连接"""
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")
-    return conn
+async def init_db():
+    """创建所有表"""
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+    logger.info("数据库表初始化完成")
 
 
-def init_db():
-    """初始化数据库表"""
-    conn = get_db()
-    conn.executescript("""
-        CREATE TABLE IF NOT EXISTS leads (
-            id TEXT PRIMARY KEY,
-            platform TEXT NOT NULL,
-            author_id TEXT NOT NULL,
-            author_name TEXT NOT NULL,
-            first_comment_id TEXT NOT NULL,
-            lead_score REAL NOT NULL,
-            status TEXT DEFAULT 'new',
-            tags TEXT DEFAULT '[]',
-            notes TEXT DEFAULT '',
-            created_at TEXT NOT NULL,
-            updated_at TEXT
-        );
+async def get_session() -> AsyncSession:
+    return async_session()
 
-        CREATE TABLE IF NOT EXISTS scores (
-            comment_id TEXT PRIMARY KEY,
-            score REAL NOT NULL,
-            intent TEXT NOT NULL,
-            urgency TEXT NOT NULL,
-            keywords TEXT DEFAULT '[]',
-            reasoning TEXT DEFAULT '',
-            analyzed_at TEXT NOT NULL
-        );
 
-        CREATE TABLE IF NOT EXISTS analysis_log (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            comment_content TEXT NOT NULL,
-            author_name TEXT NOT NULL,
-            platform TEXT NOT NULL,
-            score REAL,
-            intent TEXT,
-            reply TEXT,
-            created_at TEXT NOT NULL
-        );
+# ═══════════ PlatformAccount CRUD ═══════════
 
-        CREATE INDEX IF NOT EXISTS idx_leads_status ON leads(status);
-        CREATE INDEX IF NOT EXISTS idx_leads_score ON leads(lead_score DESC);
-        CREATE INDEX IF NOT EXISTS idx_scores_intent ON scores(intent);
-    """)
-    conn.commit()
-    conn.close()
-    logger.info(f"数据库初始化完成: {DB_PATH}")
+class AccountStore:
 
+    @staticmethod
+    async def create(data: dict) -> PlatformAccount:
+        async with async_session() as s:
+            acc = PlatformAccount(**data)
+            s.add(acc)
+            await s.commit()
+            await s.refresh(acc)
+            return acc
+
+    @staticmethod
+    async def get(account_id: int) -> Optional[PlatformAccount]:
+        async with async_session() as s:
+            return await s.get(PlatformAccount, account_id)
+
+    @staticmethod
+    async def list_all(platform: Optional[str] = None, status: Optional[str] = None) -> list[PlatformAccount]:
+        async with async_session() as s:
+            q = select(PlatformAccount)
+            if platform:
+                q = q.where(PlatformAccount.platform == platform)
+            if status:
+                q = q.where(PlatformAccount.status == status)
+            q = q.order_by(PlatformAccount.created_at.desc())
+            result = await s.execute(q)
+            return list(result.scalars().all())
+
+    @staticmethod
+    async def update(account_id: int, data: dict) -> bool:
+        async with async_session() as s:
+            data["updated_at"] = datetime.now()
+            stmt = update(PlatformAccount).where(PlatformAccount.id == account_id).values(**data)
+            r = await s.execute(stmt)
+            await s.commit()
+            return r.rowcount > 0
+
+    @staticmethod
+    async def delete(account_id: int) -> bool:
+        async with async_session() as s:
+            stmt = delete(PlatformAccount).where(PlatformAccount.id == account_id)
+            r = await s.execute(stmt)
+            await s.commit()
+            return r.rowcount > 0
+
+    @staticmethod
+    async def count() -> int:
+        async with async_session() as s:
+            r = await s.execute(select(func.count(PlatformAccount.id)))
+            return r.scalar() or 0
+
+
+# ═══════════ Lead Store ═══════════
 
 class LeadStore:
-    """潜客存储"""
 
     @staticmethod
-    def save(lead: Lead):
-        conn = get_db()
-        conn.execute("""
-            INSERT OR REPLACE INTO leads (id, platform, author_id, author_name, first_comment_id, lead_score, status, tags, notes, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            lead.id, lead.platform.value, lead.author_id, lead.author_name,
-            lead.first_comment_id, lead.lead_score, lead.status,
-            json.dumps(lead.tags), lead.notes,
-            lead.created_at.isoformat() if lead.created_at else datetime.now().isoformat(),
-            lead.updated_at.isoformat() if lead.updated_at else None,
-        ))
-        conn.commit()
-        conn.close()
+    async def save(lead_data: dict) -> Lead:
+        async with async_session() as s:
+            lead = Lead(**lead_data)
+            s.add(lead)
+            await s.commit()
+            await s.refresh(lead)
+            return lead
 
     @staticmethod
-    def get(lead_id: str) -> Optional[Lead]:
-        conn = get_db()
-        row = conn.execute("SELECT * FROM leads WHERE id = ?", (lead_id,)).fetchone()
-        conn.close()
-        if not row:
-            return None
-        return Lead(
-            id=row["id"], platform=Platform(row["platform"]),
-            author_id=row["author_id"], author_name=row["author_name"],
-            first_comment_id=row["first_comment_id"], lead_score=row["lead_score"],
-            status=row["status"], tags=json.loads(row["tags"]),
-            notes=row["notes"],
-            created_at=datetime.fromisoformat(row["created_at"]) if row["created_at"] else None,
-            updated_at=datetime.fromisoformat(row["updated_at"]) if row["updated_at"] else None,
-        )
+    async def get(lead_id: int) -> Optional[Lead]:
+        async with async_session() as s:
+            return await s.get(Lead, lead_id)
 
     @staticmethod
-    def list_all(status: Optional[str] = None, min_score: float = 0.0) -> list[Lead]:
-        conn = get_db()
-        query = "SELECT * FROM leads WHERE lead_score >= ?"
-        params = [min_score]
-        if status:
-            query += " AND status = ?"
-            params.append(status)
-        query += " ORDER BY lead_score DESC"
-        rows = conn.execute(query, params).fetchall()
-        conn.close()
-        return [Lead(
-            id=r["id"], platform=Platform(r["platform"]),
-            author_id=r["author_id"], author_name=r["author_name"],
-            first_comment_id=r["first_comment_id"], lead_score=r["lead_score"],
-            status=r["status"], tags=json.loads(r["tags"]),
-            notes=r["notes"],
-            created_at=datetime.fromisoformat(r["created_at"]) if r["created_at"] else None,
-            updated_at=datetime.fromisoformat(r["updated_at"]) if r["updated_at"] else None,
-        ) for r in rows]
+    async def list_all(
+        platform: Optional[str] = None,
+        status: Optional[str] = None,
+        min_score: float = 0.0,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[Lead], int]:
+        async with async_session() as s:
+            q = select(Lead).where(Lead.lead_score >= min_score)
+            cnt_q = select(func.count(Lead.id)).where(Lead.lead_score >= min_score)
+            if platform:
+                q = q.where(Lead.platform == platform)
+                cnt_q = cnt_q.where(Lead.platform == platform)
+            if status:
+                q = q.where(Lead.status == status)
+                cnt_q = cnt_q.where(Lead.status == status)
+            if start_time:
+                q = q.where(Lead.created_at >= start_time)
+                cnt_q = cnt_q.where(Lead.created_at >= start_time)
+            if end_time:
+                q = q.where(Lead.created_at <= end_time)
+                cnt_q = cnt_q.where(Lead.created_at <= end_time)
+
+            total = (await s.execute(cnt_q)).scalar() or 0
+            q = q.order_by(Lead.created_at.desc()).limit(limit).offset(offset)
+            result = await s.execute(q)
+            return list(result.scalars().all()), total
 
     @staticmethod
-    def update_status(lead_id: str, status: str) -> bool:
-        conn = get_db()
-        cur = conn.execute("UPDATE leads SET status = ?, updated_at = ? WHERE id = ?",
-                           (status, datetime.now().isoformat(), lead_id))
-        conn.commit()
-        conn.close()
-        return cur.rowcount > 0
-
-    @staticmethod
-    def count() -> int:
-        conn = get_db()
-        n = conn.execute("SELECT COUNT(*) FROM leads").fetchone()[0]
-        conn.close()
-        return n
-
-    @staticmethod
-    def stats() -> dict:
-        conn = get_db()
-        total = conn.execute("SELECT COUNT(*) FROM leads").fetchone()[0]
-        by_status = {}
-        for row in conn.execute("SELECT status, COUNT(*) as cnt FROM leads GROUP BY status"):
-            by_status[row["status"]] = row["cnt"]
-        by_score = {"high": 0, "medium": 0, "low": 0}
-        for row in conn.execute("""
-            SELECT
-                SUM(CASE WHEN lead_score >= 0.7 THEN 1 ELSE 0 END) as high,
-                SUM(CASE WHEN lead_score >= 0.4 AND lead_score < 0.7 THEN 1 ELSE 0 END) as medium,
-                SUM(CASE WHEN lead_score < 0.4 THEN 1 ELSE 0 END) as low
-            FROM leads
-        """):
-            by_score = {"high": row["high"] or 0, "medium": row["medium"] or 0, "low": row["low"] or 0}
-        conn.close()
-        return {"total": total, "by_status": by_status, "by_score_level": by_score}
+    async def update_status(lead_id: int, status: str) -> bool:
+        async with async_session() as s:
+            stmt = update(Lead).where(Lead.id == lead_id).values(status=status, updated_at=datetime.now())
+            r = await s.execute(stmt)
+            await s.commit()
+            return r.rowcount > 0
 
 
-class ScoreStore:
-    """评分存储"""
-
-    @staticmethod
-    def save(score: LeadScore):
-        conn = get_db()
-        conn.execute("""
-            INSERT OR REPLACE INTO scores (comment_id, score, intent, urgency, keywords, reasoning, analyzed_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (score.comment_id, score.score, score.intent, score.urgency,
-              json.dumps(score.keywords), score.reasoning, datetime.now().isoformat()))
-        conn.commit()
-        conn.close()
-
-    @staticmethod
-    def count() -> int:
-        conn = get_db()
-        n = conn.execute("SELECT COUNT(*) FROM scores").fetchone()[0]
-        conn.close()
-        return n
-
+# ═══════════ AnalysisLog Store ═══════════
 
 class AnalysisLogStore:
-    """分析日志"""
 
     @staticmethod
-    def log(comment: str, author: str, platform: str, score: float, intent: str, reply: str):
-        conn = get_db()
-        conn.execute("""
-            INSERT INTO analysis_log (comment_content, author_name, platform, score, intent, reply, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        """, (comment, author, platform, score, intent, reply, datetime.now().isoformat()))
-        conn.commit()
-        conn.close()
+    async def save(log_data: dict) -> AnalysisLog:
+        async with async_session() as s:
+            log = AnalysisLog(**log_data)
+            s.add(log)
+            await s.commit()
+            await s.refresh(log)
+            return log
+
+    @staticmethod
+    async def list_all(
+        platform: Optional[str] = None,
+        intent: Optional[str] = None,
+        author_name: Optional[str] = None,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[AnalysisLog], int]:
+        async with async_session() as s:
+            q = select(AnalysisLog)
+            cnt_q = select(func.count(AnalysisLog.id))
+            filters = []
+            if platform:
+                filters.append(AnalysisLog.platform == platform)
+            if intent:
+                filters.append(AnalysisLog.intent == intent)
+            if author_name:
+                filters.append(AnalysisLog.author_name.like(f"%{author_name}%"))
+            if start_time:
+                filters.append(AnalysisLog.created_at >= start_time)
+            if end_time:
+                filters.append(AnalysisLog.created_at <= end_time)
+
+            if filters:
+                q = q.where(and_(*filters))
+                cnt_q = cnt_q.where(and_(*filters))
+
+            total = (await s.execute(cnt_q)).scalar() or 0
+            q = q.order_by(AnalysisLog.created_at.desc()).limit(limit).offset(offset)
+            result = await s.execute(q)
+            return list(result.scalars().all()), total
+
+
+# ═══════════ ReplyLog Store ═══════════
+
+class ReplyLogStore:
+
+    @staticmethod
+    async def save(log_data: dict) -> ReplyLog:
+        async with async_session() as s:
+            log = ReplyLog(**log_data)
+            s.add(log)
+            await s.commit()
+            await s.refresh(log)
+            return log
+
+    @staticmethod
+    async def list_all(
+        platform: Optional[str] = None,
+        status: Optional[str] = None,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[ReplyLog], int]:
+        async with async_session() as s:
+            q = select(ReplyLog)
+            cnt_q = select(func.count(ReplyLog.id))
+            filters = []
+            if platform:
+                filters.append(ReplyLog.platform == platform)
+            if status:
+                filters.append(ReplyLog.status == status)
+            if filters:
+                q = q.where(and_(*filters))
+                cnt_q = cnt_q.where(and_(*filters))
+            total = (await s.execute(cnt_q)).scalar() or 0
+            q = q.order_by(ReplyLog.created_at.desc()).limit(limit).offset(offset)
+            result = await s.execute(q)
+            return list(result.scalars().all()), total
+
+
+# ═══════════ 统计 ═══════════
+
+class StatsStore:
+
+    @staticmethod
+    async def overview() -> dict:
+        async with async_session() as s:
+            # 账号数
+            acc_cnt = (await s.execute(select(func.count(PlatformAccount.id)))).scalar() or 0
+            # 潜客数
+            lead_cnt = (await s.execute(select(func.count(Lead.id)))).scalar() or 0
+            # 分析数
+            log_cnt = (await s.execute(select(func.count(AnalysisLog.id)))).scalar() or 0
+            # 回复数
+            reply_cnt = (await s.execute(
+                select(func.count(ReplyLog.id)).where(ReplyLog.status == "sent")
+            )).scalar() or 0
+
+            return {
+                "accounts": acc_cnt,
+                "leads": lead_cnt,
+                "analyzed": log_cnt,
+                "replies_sent": reply_cnt,
+            }
+
+    @staticmethod
+    async def by_platform() -> list[dict]:
+        async with async_session() as s:
+            rows = (await s.execute(
+                select(
+                    Lead.platform,
+                    func.count(Lead.id).label("leads"),
+                    func.avg(Lead.lead_score).label("avg_score"),
+                ).group_by(Lead.platform)
+            )).all()
+            return [
+                {"platform": r[0], "leads": r[1], "avg_score": round(r[2] or 0, 2)}
+                for r in rows
+            ]
+
+    @staticmethod
+    async def by_intent() -> list[dict]:
+        async with async_session() as s:
+            rows = (await s.execute(
+                select(
+                    AnalysisLog.intent,
+                    func.count(AnalysisLog.id).label("count"),
+                ).where(AnalysisLog.intent.isnot(None)).group_by(AnalysisLog.intent)
+            )).all()
+            return [{"intent": r[0], "count": r[1]} for r in rows]
+
+    @staticmethod
+    async def daily_trend(days: int = 7) -> list[dict]:
+        async with async_session() as s:
+            rows = (await s.execute(
+                select(
+                    func.date(AnalysisLog.created_at).label("day"),
+                    func.count(AnalysisLog.id).label("count"),
+                    func.avg(AnalysisLog.score).label("avg_score"),
+                ).group_by(func.date(AnalysisLog.created_at))
+                 .order_by(func.date(AnalysisLog.created_at).desc())
+                 .limit(days)
+            )).all()
+            return [
+                {"day": str(r[0]), "count": r[1], "avg_score": round(r[2] or 0, 2)}
+                for r in rows
+            ]

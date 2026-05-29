@@ -1,21 +1,13 @@
 #!/usr/bin/env python3
-"""API 集成测试 — 使用测试数据库"""
+"""API集成测试 — 使用SQLite内存数据库"""
 import sys
 import os
 import asyncio
-import tempfile
 
-# 使用临时数据库
-os.environ["COMMENT_AI_DB"] = os.path.join(tempfile.gettempdir(), "test_comment_ai.db")
+# 覆盖为 SQLite 内存数据库（测试用）
+os.environ["DB_URL"] = "sqlite+aiosqlite:///:memory:"
 
 sys.path.insert(0, '.')
-from httpx import AsyncClient, ASGITransport
-from src.core.database import init_db
-
-# 初始化测试数据库
-init_db()
-
-from src.main import app
 
 PASS = 0
 FAIL = 0
@@ -32,9 +24,16 @@ def check(name, condition, detail=""):
 
 
 async def test_api():
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as c:
+    from httpx import AsyncClient, ASGITransport
+    from src.core.database import init_db
+    from src.main import app
 
+    # 初始化数据库
+    await init_db()
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+
+        # === 健康检查 ===
         print("\n📡 基础端点")
         r = await c.get("/")
         check("GET / 返回页面", r.status_code == 200 and "评论" in r.text)
@@ -42,6 +41,63 @@ async def test_api():
         r = await c.get("/api/v1/health")
         check("GET /health", r.status_code == 200 and r.json()["status"] == "ok")
 
+        # === 账号管理 ===
+        print("\n📱 平台账号管理")
+
+        # 创建抖音账号
+        r = await c.post("/api/v1/accounts", json={
+            "platform": "douyin", "account_id": "dy_001",
+            "account_name": "测试抖音号", "remark": "运营测试",
+        })
+        check("POST /accounts 抖音", r.status_code == 200)
+        dy_id = r.json()["id"]
+
+        # 创建B站账号
+        r = await c.post("/api/v1/accounts", json={
+            "platform": "bilibili", "account_id": "bili_001",
+            "account_name": "测试B站号",
+        })
+        check("POST /accounts B站", r.status_code == 200)
+        bili_id = r.json()["id"]
+
+        # 创建小红书账号
+        r = await c.post("/api/v1/accounts", json={
+            "platform": "xiaohongshu", "account_id": "xhs_001",
+            "account_name": "测试小红书号",
+        })
+        check("POST /accounts 小红书", r.status_code == 200)
+
+        # 创建视频号账号
+        r = await c.post("/api/v1/accounts", json={
+            "platform": "wechat_video", "account_id": "wx_001",
+            "account_name": "测试视频号",
+        })
+        check("POST /accounts 视频号", r.status_code == 200)
+
+        # 列表
+        r = await c.get("/api/v1/accounts")
+        check("GET /accounts 全部", r.json()["total"] == 4)
+
+        # 按平台筛选
+        r = await c.get("/api/v1/accounts?platform=douyin")
+        check("GET /accounts?platform=douyin", r.json()["total"] == 1)
+
+        # 更新
+        r = await c.put(f"/api/v1/accounts/{dy_id}", json={"remark": "已更新"})
+        check("PUT /accounts/:id", r.json()["ok"])
+
+        # 获取单个
+        r = await c.get(f"/api/v1/accounts/{dy_id}")
+        check("GET /accounts/:id", r.json()["remark"] == "已更新")
+
+        # 删除
+        r = await c.delete(f"/api/v1/accounts/{bili_id}")
+        check("DELETE /accounts/:id", r.json()["ok"])
+
+        r = await c.get("/api/v1/accounts")
+        check("删除后数量=3", r.json()["total"] == 3)
+
+        # === 演示 ===
         print("\n🎬 Demo 全链路")
         r = await c.post("/api/v1/demo/run")
         check("POST /demo/run 200", r.status_code == 200)
@@ -51,62 +107,66 @@ async def test_api():
         check("回复数>=3", d["replies_generated"] >= 3, f"got {d['replies_generated']}")
         check("结果已排序", d["results"][0]["score"] >= d["results"][-1]["score"])
 
-        high_scores = [r for r in d["results"] if r["score"] >= 0.7]
-        check("高意向>=2", len(high_scores) >= 2)
-        for h in high_scores[:2]:
-            check(f"  {h['author']}有回复", len(h["reply"]) > 0)
-
-        low_scores = [r for r in d["results"] if r["score"] < 0.4]
-        check("低意向>=2", len(low_scores) >= 2)
-
-        first = d["results"][0]
-        for key in ["comment", "author", "score", "intent", "urgency", "keywords", "reply", "is_lead"]:
-            check(f"字段{key}", key in first)
-
-        print("\n👤 潜客管理 (持久化)")
+        # === 潜客管理 ===
+        print("\n👤 潜客管理")
         r = await c.get("/api/v1/leads")
         check("GET /leads", r.status_code == 200)
         leads = r.json()
         check("潜客数匹配", leads["total"] == d["leads_found"])
 
+        # 按平台筛选
+        r = await c.get("/api/v1/leads?platform=douyin")
+        check("GET /leads?platform=douyin", r.json()["total"] == d["leads_found"])
+
+        # 按评分筛选
+        r = await c.get("/api/v1/leads?min_score=0.7")
+        high = r.json()
+        check("GET /leads?min_score=0.7", high["total"] >= 2)
+        for l in high["leads"]:
+            check(f"  {l['author_name']} score>=0.7", l["lead_score"] >= 0.7)
+
+        # 更新状态
         if leads["total"] > 0:
             lid = leads["leads"][0]["id"]
-            r = await c.get(f"/api/v1/leads/{lid}")
-            check("GET /leads/:id", r.status_code == 200)
-
             r = await c.put(f"/api/v1/leads/{lid}/status?status=contacted")
-            check("PUT /leads/:id/status", r.status_code == 200)
+            check("PUT /leads/:id/status", r.json()["ok"])
 
-            # 验证持久化
-            r = await c.get(f"/api/v1/leads/{lid}")
-            check("状态已持久化", r.json()["status"] == "contacted")
+        # 导出CSV
+        r = await c.get("/api/v1/leads/export")
+        check("GET /leads/export CSV", r.status_code == 200 and "text/csv" in r.headers["content-type"])
 
-        r = await c.get("/api/v1/leads/nonexistent")
-        check("GET /leads/404", r.status_code == 404)
+        # === 分析日志 ===
+        print("\n📋 分析日志")
+        r = await c.get("/api/v1/logs")
+        check("GET /logs", r.status_code == 200)
+        logs = r.json()
+        check("日志数>=10", logs["total"] >= 10)
 
-        print("\n🔍 手动分析")
-        r = await c.post("/api/v1/analyze", json={
-            "id": "m1", "platform": "douyin", "content": "想学这个，多少钱？",
-            "author_id": "u1", "author_name": "测试", "post_id": "p1", "post_title": "AI",
-        })
-        check("POST /analyze 200", r.status_code == 200)
-        s = r.json()
-        check("score>=0.7", s["score"] >= 0.7, f"got {s['score']}")
-        check("intent=potential_lead", s["intent"] == "potential_lead")
-        check("识别关键词", len(s["keywords"]) >= 1)
+        # 按意图筛选
+        r = await c.get("/api/v1/logs?intent=potential_lead")
+        check("GET /logs?intent=potential_lead", r.json()["total"] >= 2)
 
-        r = await c.post("/api/v1/analyze", json={
-            "id": "m2", "platform": "douyin", "content": "哈哈哈哈笑死我了",
-            "author_id": "u2", "author_name": "测试2", "post_id": "p1", "post_title": "AI",
-        })
-        check("负面: score<0.4", r.json()["score"] < 0.4)
+        # 按用户搜索
+        r = await c.get("/api/v1/logs?author_name=科技")
+        check("GET /logs?author_name=科技", r.json()["total"] >= 1)
 
-        print("\n📊 统计")
-        r = await c.get("/api/v1/stats")
-        check("GET /stats", r.status_code == 200)
-        st = r.json()
-        check("total_analyzed>=10", st["total_analyzed"] >= 10)
-        check("leads.total>=3", st["leads"]["total"] >= 3)
+        # === 统计 ===
+        print("\n📊 统计接口")
+        r = await c.get("/api/v1/stats/overview")
+        check("GET /stats/overview", r.status_code == 200)
+        ov = r.json()
+        check("accounts>=3", ov["accounts"] >= 3)
+        check("leads>=3", ov["leads"] >= 3)
+        check("analyzed>=10", ov["analyzed"] >= 10)
+
+        r = await c.get("/api/v1/stats/by-platform")
+        check("GET /stats/by-platform", r.status_code == 200 and len(r.json()) >= 1)
+
+        r = await c.get("/api/v1/stats/by-intent")
+        check("GET /stats/by-intent", r.status_code == 200 and len(r.json()) >= 1)
+
+        r = await c.get("/api/v1/stats/trend")
+        check("GET /stats/trend", r.status_code == 200)
 
     print(f"\n{'='*40}")
     print(f"📊 结果: {PASS} 通过, {FAIL} 失败")

@@ -1,92 +1,184 @@
-"""API路由 — 管理后台接口"""
+"""API路由 — 管理平台接口
+
+账号管理 | 潜客筛选 | 分析日志 | 统计看板
+"""
+import json
 import csv
 import io
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from typing import Optional
-from src.models.comment import Comment, LeadScore, Lead, Platform
-from src.core.database import LeadStore, ScoreStore, AnalysisLogStore
-from src.core.cache import intent_cache, sentiment_cache
-from src.core.dedup import deduplicator
-from src.core.validator import validate_config
-from src.core.logger import logging
 from datetime import datetime
+
+from src.models.comment import (
+    Comment, LeadScore, AccountCreate, AccountUpdate, Platform,
+)
+from src.core.database import (
+    AccountStore, LeadStore, AnalysisLogStore, ReplyLogStore, StatsStore,
+)
+from src.core.logger import logging
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/v1")
 
 
+# ═══════════ 健康检查 ═══════════
+
 @router.get("/health")
 async def health():
-    """健康检查"""
-    config = validate_config()
+    return {"status": "ok", "version": "0.2.0", "accounts": await AccountStore.count()}
+
+
+# ═══════════ 平台账号管理 ═══════════
+
+@router.post("/accounts")
+async def create_account(data: AccountCreate):
+    """创建平台账号"""
+    acc = await AccountStore.create(data.model_dump())
+    logger.info(f"创建账号: [{data.platform}] {data.account_name}")
+    return {"ok": True, "id": acc.id}
+
+
+@router.get("/accounts")
+async def list_accounts(
+    platform: Optional[str] = None,
+    status: Optional[str] = None,
+):
+    """获取账号列表"""
+    accounts = await AccountStore.list_all(platform=platform, status=status)
+    result = []
+    for a in accounts:
+        result.append({
+            "id": a.id,
+            "platform": a.platform,
+            "account_id": a.account_id,
+            "account_name": a.account_name,
+            "account_url": a.account_url,
+            "avatar_url": a.avatar_url,
+            "status": a.status,
+            "config": a.config,
+            "remark": a.remark,
+            "created_at": a.created_at.isoformat() if a.created_at else None,
+            "updated_at": a.updated_at.isoformat() if a.updated_at else None,
+        })
+    return {"total": len(result), "accounts": result}
+
+
+@router.get("/accounts/{account_id}")
+async def get_account(account_id: int):
+    """获取单个账号"""
+    acc = await AccountStore.get(account_id)
+    if not acc:
+        raise HTTPException(404, "账号不存在")
     return {
-        "status": "ok",
-        "version": "0.3.0",
-        "leads": LeadStore.count(),
-        "config_valid": config["valid"],
-        "mode": "llm" if config["config"]["has_api_key"] else "keyword",
+        "id": acc.id,
+        "platform": acc.platform,
+        "account_id": acc.account_id,
+        "account_name": acc.account_name,
+        "account_url": acc.account_url,
+        "avatar_url": acc.avatar_url,
+        "status": acc.status,
+        "config": acc.config,
+        "remark": acc.remark,
+        "created_at": acc.created_at.isoformat() if acc.created_at else None,
+        "updated_at": acc.updated_at.isoformat() if acc.updated_at else None,
     }
 
 
-@router.get("/config")
-async def get_config():
-    """配置验证"""
-    return validate_config()
+@router.put("/accounts/{account_id}")
+async def update_account(account_id: int, data: AccountUpdate):
+    """更新账号"""
+    acc = await AccountStore.get(account_id)
+    if not acc:
+        raise HTTPException(404, "账号不存在")
+    update_data = data.model_dump(exclude_none=True)
+    if not update_data:
+        raise HTTPException(400, "无更新内容")
+    ok = await AccountStore.update(account_id, update_data)
+    return {"ok": ok}
 
 
-@router.get("/cache/stats")
-async def cache_stats():
-    """缓存统计"""
-    return {
-        "intent_cache": intent_cache.stats(),
-        "sentiment_cache": sentiment_cache.stats(),
-    }
+@router.delete("/accounts/{account_id}")
+async def delete_account(account_id: int):
+    """删除账号"""
+    ok = await AccountStore.delete(account_id)
+    if not ok:
+        raise HTTPException(404, "账号不存在")
+    return {"ok": True}
 
 
-@router.post("/cache/clear")
-async def clear_cache():
-    """清空缓存"""
-    intent_cache.clear()
-    sentiment_cache.clear()
-    return {"ok": True, "message": "缓存已清空"}
-
-
-@router.get("/dedup/stats")
-async def dedup_stats():
-    """去重统计"""
-    return deduplicator.stats()
-
+# ═══════════ 潜客管理 ═══════════
 
 @router.get("/leads")
 async def list_leads(
+    platform: Optional[str] = None,
     status: Optional[str] = None,
     min_score: float = 0.0,
-    platform: Optional[str] = None,
-    category: Optional[str] = None,
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
 ):
-    """获取潜客列表"""
-    results = LeadStore.list_all(status=status, min_score=min_score)
-    if platform:
-        results = [l for l in results if l.platform.value == platform]
-    return {"total": len(results), "leads": [l.model_dump() for l in results]}
+    """潜客列表 — 支持平台/状态/评分/时间筛选"""
+    offset = (page - 1) * page_size
+    leads, total = await LeadStore.list_all(
+        platform=platform, status=status, min_score=min_score,
+        start_time=start_time, end_time=end_time,
+        limit=page_size, offset=offset,
+    )
+    return {
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "leads": [
+            {
+                "id": l.id,
+                "platform": l.platform,
+                "author_id": l.author_id,
+                "author_name": l.author_name,
+                "first_comment_content": l.first_comment_content,
+                "lead_score": l.lead_score,
+                "status": l.status,
+                "tags": l.tags,
+                "notes": l.notes,
+                "created_at": l.created_at.isoformat() if l.created_at else None,
+            }
+            for l in leads
+        ],
+    }
+
+
+@router.put("/leads/{lead_id}/status")
+async def update_lead_status(lead_id: int, status: str):
+    """更新潜客状态"""
+    lead = await LeadStore.get(lead_id)
+    if not lead:
+        raise HTTPException(404, "潜客不存在")
+    ok = await LeadStore.update_status(lead_id, status)
+    return {"ok": ok, "old": lead.status, "new": status}
 
 
 @router.get("/leads/export")
-async def export_leads():
-    """导出潜客为CSV"""
-    leads = LeadStore.list_all()
+async def export_leads(
+    platform: Optional[str] = None,
+    status: Optional[str] = None,
+    min_score: float = 0.0,
+):
+    """导出潜客CSV"""
+    leads, _ = await LeadStore.list_all(
+        platform=platform, status=status, min_score=min_score, limit=10000,
+    )
     if not leads:
         raise HTTPException(404, "无潜客数据")
 
     output = io.StringIO()
     writer = csv.writer(output)
-    writer.writerow(["ID", "平台", "用户ID", "昵称", "评分", "状态", "分类", "标签", "创建时间"])
-    for lead in leads:
+    writer.writerow(["ID", "平台", "用户ID", "昵称", "评分", "状态", "首条评论", "创建时间"])
+    for l in leads:
         writer.writerow([
-            lead.id, lead.platform.value, lead.author_id, lead.author_name,
-            lead.lead_score, lead.status, ",".join(lead.tags),
-            lead.created_at.strftime("%Y-%m-%d %H:%M") if lead.created_at else "",
+            l.id, l.platform, l.author_id, l.author_name,
+            l.lead_score, l.status, (l.first_comment_content or "")[:50],
+            l.created_at.strftime("%Y-%m-%d %H:%M") if l.created_at else "",
         ])
     output.seek(0)
     return StreamingResponse(
@@ -96,103 +188,170 @@ async def export_leads():
     )
 
 
-@router.get("/leads/{lead_id}")
-async def get_lead(lead_id: str):
-    """获取单个潜客详情"""
-    lead = LeadStore.get(lead_id)
-    if not lead:
-        raise HTTPException(404, "潜客不存在")
-    return lead.model_dump()
+# ═══════════ 分析日志 ═══════════
 
-
-@router.put("/leads/{lead_id}/status")
-async def update_lead_status(lead_id: str, status: str):
-    """更新潜客状态"""
-    lead = LeadStore.get(lead_id)
-    if not lead:
-        raise HTTPException(404, "潜客不存在")
-    old = lead.status
-    ok = LeadStore.update_status(lead_id, status)
-    if ok:
-        logger.info(f"潜客状态: {lead_id} {old} → {status}")
-    return {"ok": ok, "old": old, "new": status}
-
-
-@router.post("/analyze")
-async def analyze_comment(comment: Comment):
-    """手动分析单条评论"""
-    from src.analyzers.intent_analyzer import IntentAnalyzer
-    from src.analyzers.sentiment import sentiment_analyzer
-    from src.analyzers.lead_classifier import lead_classifier
-
-    # 去重检查
-    if deduplicator.is_duplicate(comment.content, comment.author_id, comment.platform.value):
-        raise HTTPException(409, "重复评论")
-
-    analyzer = IntentAnalyzer()
-    score = await analyzer.analyze(comment)
-    sentiment = sentiment_analyzer.analyze(comment.content)
-    classification = lead_classifier.classify(comment.content, score.keywords, score.score)
-
-    ScoreStore.save(score)
-    AnalysisLogStore.log(comment.content, comment.author_name, comment.platform.value,
-                         score.score, score.intent, "")
-    logger.info(f"分析: [{score.score:.2f}] {comment.author_name}: {comment.content[:30]}")
-
+@router.get("/logs")
+async def list_logs(
+    platform: Optional[str] = None,
+    intent: Optional[str] = None,
+    author_name: Optional[str] = None,
+    start_time: Optional[str] = None,
+    end_time: Optional[str] = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+):
+    """分析日志 — 支持平台/意图/用户/时间筛选"""
+    offset = (page - 1) * page_size
+    logs, total = await AnalysisLogStore.list_all(
+        platform=platform, intent=intent, author_name=author_name,
+        start_time=start_time, end_time=end_time,
+        limit=page_size, offset=offset,
+    )
     return {
-        **score.model_dump(),
-        "sentiment": sentiment.sentiment.value,
-        "sentiment_confidence": sentiment.confidence,
-        "category": classification.category.value,
-        "category_confidence": classification.confidence,
-        "category_tags": classification.tags,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "logs": [
+            {
+                "id": l.id,
+                "platform": l.platform,
+                "comment_id": l.comment_id,
+                "comment_content": l.comment_content,
+                "author_name": l.author_name,
+                "post_title": l.post_title,
+                "score": l.score,
+                "intent": l.intent,
+                "urgency": l.urgency,
+                "keywords": l.keywords,
+                "reply_content": l.reply_content,
+                "replied": l.replied,
+                "created_at": l.created_at.isoformat() if l.created_at else None,
+            }
+            for l in logs
+        ],
     }
 
 
+# ═══════════ 回复日志 ═══════════
+
+@router.get("/replies")
+async def list_replies(
+    platform: Optional[str] = None,
+    status: Optional[str] = None,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+):
+    """回复日志"""
+    offset = (page - 1) * page_size
+    logs, total = await ReplyLogStore.list_all(
+        platform=platform, status=status,
+        limit=page_size, offset=offset,
+    )
+    return {
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "replies": [
+            {
+                "id": l.id,
+                "platform": l.platform,
+                "comment_id": l.comment_id,
+                "reply_content": l.reply_content,
+                "status": l.status,
+                "error_msg": l.error_msg,
+                "created_at": l.created_at.isoformat() if l.created_at else None,
+            }
+            for l in logs
+        ],
+    }
+
+
+# ═══════════ 统计 ═══════════
+
+@router.get("/stats/overview")
+async def stats_overview():
+    """总览统计"""
+    return await StatsStore.overview()
+
+
+@router.get("/stats/by-platform")
+async def stats_by_platform():
+    """按平台统计"""
+    return await StatsStore.by_platform()
+
+
+@router.get("/stats/by-intent")
+async def stats_by_intent():
+    """按意图统计"""
+    return await StatsStore.by_intent()
+
+
+@router.get("/stats/trend")
+async def stats_trend(days: int = Query(7, ge=1, le=30)):
+    """趋势统计"""
+    return await StatsStore.daily_trend(days)
+
+
+# ═══════════ 演示 ═══════════
+
 @router.post("/demo/run")
 async def demo_run():
-    """演示模式 — 模拟数据跑完整流程"""
+    """演示模式 — mock 数据跑完整流程"""
     from src.monitors.douyin_monitor import MOCK_COMMENTS
     from src.analyzers.intent_analyzer import IntentAnalyzer
-    from src.analyzers.sentiment import sentiment_analyzer
-    from src.analyzers.lead_classifier import lead_classifier
     from src.repliers.reply_generator import ReplyGenerator
 
     logger.info("Demo 开始")
-    deduplicator.clear()  # 清空去重记录
-
     analyzer = IntentAnalyzer()
     replier = ReplyGenerator()
     results = []
 
+    # 确保有演示账号
+    accounts = await AccountStore.list_all(platform="douyin")
+    if not accounts:
+        acc = await AccountStore.create({
+            "platform": "douyin", "account_id": "demo_001",
+            "account_name": "演示抖音号", "status": "active",
+        })
+        account_id = acc.id
+    else:
+        account_id = accounts[0].id
+
     for comment in MOCK_COMMENTS:
-        # 去重
-        is_dup = deduplicator.is_duplicate(comment.content, comment.author_id, comment.platform.value)
-
         score = await analyzer.analyze(comment)
-        sentiment = sentiment_analyzer.analyze(comment.content)
-        classification = lead_classifier.classify(comment.content, score.keywords, score.score)
-        ScoreStore.save(score)
-
         reply = ""
         if score.score >= 0.5:
             reply = await replier.generate(comment, score)
 
-        if score.score >= 0.5:
-            lead = Lead(
-                id=f"lead_{comment.id}",
-                platform=comment.platform,
-                author_id=comment.author_id,
-                author_name=comment.author_name,
-                first_comment_id=comment.id,
-                lead_score=score.score,
-                tags=classification.tags,
-                created_at=datetime.now(),
-            )
-            LeadStore.save(lead)
+        # 存分析日志
+        await AnalysisLogStore.save({
+            "platform_account_id": account_id,
+            "platform": comment.platform.value,
+            "comment_id": comment.id,
+            "comment_content": comment.content,
+            "author_id": comment.author_id,
+            "author_name": comment.author_name,
+            "post_id": comment.post_id,
+            "post_title": comment.post_title,
+            "score": score.score,
+            "intent": score.intent,
+            "urgency": score.urgency,
+            "keywords": json.dumps(score.keywords),
+            "reply_content": reply,
+            "replied": bool(reply),
+        })
 
-        AnalysisLogStore.log(comment.content, comment.author_name, comment.platform.value,
-                             score.score, score.intent, reply)
+        # 高意向存潜客
+        if score.score >= 0.5:
+            await LeadStore.save({
+                "platform_account_id": account_id,
+                "platform": comment.platform.value,
+                "author_id": comment.author_id,
+                "author_name": comment.author_name,
+                "first_comment_content": comment.content,
+                "lead_score": score.score,
+                "tags": json.dumps(score.keywords),
+            })
 
         results.append({
             "comment": comment.content,
@@ -201,45 +360,17 @@ async def demo_run():
             "intent": score.intent,
             "urgency": score.urgency,
             "keywords": score.keywords,
-            "sentiment": sentiment.sentiment.value,
-            "sentiment_confidence": sentiment.confidence,
-            "category": classification.category.value,
-            "category_confidence": classification.confidence,
             "reply": reply,
             "is_lead": score.score >= 0.5,
-            "is_duplicate": is_dup,
         })
 
     results.sort(key=lambda x: x["score"], reverse=True)
     leads_n = sum(1 for r in results if r["is_lead"])
     replies_n = sum(1 for r in results if r["reply"])
-    logger.info(f"Demo 完成 — {len(results)}评论, {leads_n}潜客, {replies_n}回复")
 
     return {
         "total_comments": len(MOCK_COMMENTS),
         "leads_found": leads_n,
         "replies_generated": replies_n,
-        "duplicates_found": sum(1 for r in results if r["is_duplicate"]),
-        "sentiment_summary": {
-            "positive": sum(1 for r in results if r["sentiment"] == "positive"),
-            "negative": sum(1 for r in results if r["sentiment"] == "negative"),
-            "neutral": sum(1 for r in results if r["sentiment"] == "neutral"),
-            "mixed": sum(1 for r in results if r["sentiment"] == "mixed"),
-        },
-        "category_summary": {},
         "results": results,
-    }
-
-
-@router.get("/stats")
-async def get_stats():
-    """统计数据"""
-    return {
-        "total_analyzed": ScoreStore.count(),
-        "leads": LeadStore.stats(),
-        "cache": {
-            "intent": intent_cache.stats(),
-            "sentiment": sentiment_cache.stats(),
-        },
-        "dedup": deduplicator.stats(),
     }
