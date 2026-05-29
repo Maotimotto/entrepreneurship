@@ -1,546 +1,748 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>评论AI — 管理平台</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    :root{--bg:#0f1117;--s1:#1a1d27;--s2:#242836;--bd:#2e3347;--t1:#e4e4e7;--t2:#9ca3af;--a1:#6366f1;--a2:#818cf8;--cy:#22d3ee;--gn:#10b981;--yl:#f59e0b;--rd:#ef4444;--pn:#f472b6}
-    body{font-family:'SF Pro',-apple-system,system-ui,sans-serif;background:var(--bg);color:var(--t1);min-height:100vh}
-    a{color:var(--a2);text-decoration:none}
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comment AI · 管理后台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;510;590;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg-page:#08090a;--bg-panel:#0f1011;--bg-elevated:#191a1b;
+--text-primary:#f7f8f8;--text-body:#d0d6e0;--text-muted:#8a8f98;--text-subtle:#62666d;
+--accent:#5e6ad2;--interactive:#7170ff;--hover:#828fff;
+--border:rgba(255,255,255,0.08);--border-subtle:rgba(255,255,255,0.05);
+--green:#27a644;--red:#ef4444;--yellow:#f59e0b;--emerald:#10b981;
+--p-douyin:#fe2c55;--p-xhs:#ff2d55;--p-wechat:#07c160;--p-bili:#00a1d6;
+--radius-btn:6px;--radius-card:8px;--radius-pill:9999px;
+}
+html{font-size:14px;-webkit-font-smoothing:antialiased}
+body{font-family:'Inter','PingFang SC','Microsoft YaHei',sans-serif;font-feature-settings:"cv01","ss03";background:var(--bg-page);color:var(--text-body);line-height:1.5;overflow:hidden;height:100vh}
+input,select,textarea,button{font:inherit;color:inherit}
+a{color:var(--interactive);text-decoration:none}
+a:hover{color:var(--hover)}
+::selection{background:rgba(94,106,210,0.4)}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,0.18)}
 
-    /* Layout */
-    .sidebar{position:fixed;left:0;top:0;bottom:0;width:200px;background:var(--s1);border-right:1px solid var(--bd);padding:16px 0;z-index:10}
-    .sidebar h1{font-size:16px;padding:0 16px 16px;border-bottom:1px solid var(--bd);margin-bottom:8px}
-    .sidebar h1 span{color:var(--cy)}
-    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;font-size:13px;color:var(--t2);transition:.15s}
-    .nav-item:hover,.nav-item.active{color:var(--t1);background:var(--s2)}
-    .nav-item.active{border-right:2px solid var(--a1)}
-    .main{margin-left:200px;padding:20px 24px}
+/* Layout */
+.app{display:flex;height:100vh}
+.sidebar{width:220px;min-width:220px;background:var(--bg-panel);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:16px 12px;gap:2px;overflow-y:auto}
+.sidebar-brand{display:flex;align-items:center;gap:8px;padding:8px 12px 16px;border-bottom:1px solid var(--border-subtle);margin-bottom:8px}
+.sidebar-brand svg{width:22px;height:22px;color:var(--accent)}
+.sidebar-brand span{font-weight:590;font-size:15px;color:var(--text-primary);letter-spacing:-0.3px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:var(--radius-btn);color:var(--text-muted);cursor:pointer;transition:all .15s;font-size:13.5px;font-weight:510;user-select:none}
+.nav-item:hover{color:var(--text-body);background:rgba(255,255,255,0.04)}
+.nav-item.active{color:var(--text-primary);background:rgba(94,106,210,0.12)}
+.nav-item.active svg{color:var(--accent)}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:0.7}
+.nav-item.active svg{opacity:1}
+.nav-section{font-size:11px;font-weight:590;color:var(--text-subtle);text-transform:uppercase;letter-spacing:0.5px;padding:16px 12px 6px}
+.sidebar-footer{margin-top:auto;padding:12px;border-top:1px solid var(--border-subtle)}
+.scheduler-bar{display:flex;gap:6px;align-items:center;margin-top:8px}
+.scheduler-bar .status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.scheduler-bar .status-dot.on{background:var(--green);box-shadow:0 0 6px var(--green)}
+.scheduler-bar .status-dot.off{background:var(--text-subtle)}
+.scheduler-bar span{font-size:12px;color:var(--text-muted)}
 
-    /* Header */
-    .page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
-    .page-title{font-size:20px;font-weight:700}
-    .badge{display:inline-block;background:var(--a1);color:#fff;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:600;margin-left:8px}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:52px;min-height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 24px;border-bottom:1px solid var(--border);background:var(--bg-panel)}
+.topbar h1{font-size:15px;font-weight:590;color:var(--text-primary);letter-spacing:-0.2px}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.content{flex:1;overflow-y:auto;padding:24px}
 
-    /* Stats Grid */
-    .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-    .stat{background:var(--s1);border:1px solid var(--bd);border-radius:10px;padding:16px}
-    .stat .label{font-size:11px;color:var(--t2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
-    .stat .value{font-size:28px;font-weight:700}
-    .stat .value.a{color:var(--a2)}.stat .value.c{color:var(--cy)}.stat .value.g{color:var(--gn)}.stat .value.y{color:var(--yl)}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:var(--radius-btn);font-size:13px;font-weight:510;border:1px solid transparent;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn-primary{background:var(--interactive);color:#fff;border-color:var(--interactive)}
+.btn-primary:hover{background:var(--hover);border-color:var(--hover)}
+.btn-secondary{background:rgba(255,255,255,0.06);color:var(--text-body);border-color:var(--border)}
+.btn-secondary:hover{background:rgba(255,255,255,0.1);color:var(--text-primary)}
+.btn-danger{background:rgba(239,68,68,0.15);color:var(--red);border-color:rgba(239,68,68,0.2)}
+.btn-danger:hover{background:rgba(239,68,68,0.25)}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-icon{padding:6px;background:transparent;border:1px solid var(--border);color:var(--text-muted)}
+.btn-icon:hover{background:rgba(255,255,255,0.06);color:var(--text-body)}
 
-    /* Table */
-    .card{background:var(--s1);border:1px solid var(--bd);border-radius:10px;overflow:hidden;margin-bottom:16px}
-    .card-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--bd)}
-    .card-header h3{font-size:14px}
-    table{width:100%;border-collapse:collapse}
-    th,td{padding:10px 14px;text-align:left;font-size:12px;border-bottom:1px solid var(--bd)}
-    th{color:var(--t2);font-weight:600;text-transform:uppercase;font-size:10px;letter-spacing:.5px}
-    tr:hover{background:var(--s2)}
+/* Cards */
+.card{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius-card);padding:20px}
+.card-title{font-size:12px;font-weight:590;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.4px;margin-bottom:12px}
 
-    /* Forms & Controls */
-    .filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
-    select,input[type=text],input[type=datetime-local],input[type=number]{background:var(--s2);border:1px solid var(--bd);border-radius:6px;color:var(--t1);padding:7px 12px;font-size:12px;outline:none}
-    select:focus,input:focus{border-color:var(--a1)}
-    .btn{padding:7px 14px;border-radius:6px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:.15s}
-    .btn-p{background:var(--a1);color:#fff}.btn-p:hover{background:var(--a2)}
-    .btn-g{background:transparent;color:var(--t2);border:1px solid var(--bd)}.btn-g:hover{border-color:var(--a1);color:var(--t1)}
-    .btn-r{background:var(--rd);color:#fff}.btn-r:hover{opacity:.8}
-    .btn-sm{padding:4px 10px;font-size:11px}
-    .btn:disabled{opacity:.4;cursor:not-allowed}
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.stat-card{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius-card);padding:20px;transition:border-color .2s}
+.stat-card:hover{border-color:rgba(255,255,255,0.12)}
+.stat-label{font-size:12px;font-weight:510;color:var(--text-muted);margin-bottom:6px}
+.stat-value{font-size:28px;font-weight:590;color:var(--text-primary);letter-spacing:-1px;font-feature-settings:"tnum"}
+.stat-icon{width:32px;height:32px;border-radius:var(--radius-btn);display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.stat-icon svg{width:16px;height:16px}
 
-    /* Tags */
-    .tag{display:inline-block;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:600}
-    .tag-dy{background:rgba(0,0,0,.3);color:#fe2c55}
-    .tag-xhs{background:rgba(255,45,85,.15);color:#ff2d55}
-    .tag-wx{background:rgba(7,193,96,.15);color:#07c160}
-    .tag-bili{background:rgba(0,161,214,.15);color:#00a1d6}
-    .tag-active{background:rgba(16,185,129,.15);color:var(--gn)}
-    .tag-paused{background:rgba(245,158,11,.15);color:var(--yl)}
-    .tag-error{background:rgba(239,68,68,.15);color:var(--rd)}
-    .tag-new{background:rgba(99,102,241,.15);color:var(--a2)}
-    .tag-contacted{background:rgba(34,211,238,.15);color:var(--cy)}
-    .tag-converted{background:rgba(16,185,129,.15);color:var(--gn)}
-    .tag-lost{background:rgba(156,163,175,.1);color:var(--t2)}
-    .tag-high{background:rgba(239,68,68,.15);color:var(--rd)}
-    .tag-medium{background:rgba(245,158,11,.15);color:var(--yl)}
-    .tag-low{background:rgba(156,163,175,.1);color:var(--t2)}
+/* Grid layouts */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px}
 
-    /* Score bar */
-    .score-bar{display:flex;align-items:center;gap:6px}
-    .score-fill{width:50px;height:4px;background:var(--bd);border-radius:2px;overflow:hidden}
-    .score-fill div{height:100%;border-radius:2px}
+/* Tables */
+.table-wrap{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius-card);overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead{background:var(--bg-elevated)}
+th{text-align:left;padding:10px 16px;font-size:12px;font-weight:590;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.3px;border-bottom:1px solid var(--border)}
+td{padding:10px 16px;font-size:13px;border-bottom:1px solid var(--border-subtle);color:var(--text-body)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,0.02)}
 
-    /* Modal */
-    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:100;display:none;align-items:center;justify-content:center}
-    .modal-overlay.show{display:flex}
-    .modal{background:var(--s1);border:1px solid var(--bd);border-radius:12px;width:480px;max-height:80vh;overflow-y:auto}
-    .modal-header{display:flex;justify-content:space-between;align-items:center;padding:16px;border-bottom:1px solid var(--bd)}
-    .modal-header h3{font-size:15px}
-    .modal-close{background:none;border:none;color:var(--t2);font-size:18px;cursor:pointer}
-    .modal-body{padding:16px}
-    .form-group{margin-bottom:14px}
-    .form-group label{display:block;font-size:11px;color:var(--t2);margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
-    .form-group input,.form-group select,.form-group textarea{width:100%}
-    .form-group textarea{background:var(--s2);border:1px solid var(--bd);border-radius:6px;color:var(--t1);padding:7px 12px;font-size:12px;min-height:60px;resize:vertical;outline:none}
-    .modal-footer{display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--bd)}
+/* Tags / Pills */
+.tag{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:var(--radius-pill);font-size:12px;font-weight:510;line-height:1.6}
+.tag-douyin{background:rgba(254,44,85,0.15);color:var(--p-douyin)}
+.tag-xiaohongshu{background:rgba(255,45,85,0.15);color:var(--p-xhs)}
+.tag-wechat_video{background:rgba(7,193,96,0.15);color:var(--p-wechat)}
+.tag-bilibili{background:rgba(0,161,214,0.15);color:var(--p-bili)}
+.tag-active{background:rgba(39,166,68,0.15);color:var(--green)}
+.tag-paused{background:rgba(245,158,11,0.15);color:var(--yellow)}
+.tag-error{background:rgba(239,68,68,0.15);color:var(--red)}
+.tag-sent{background:rgba(16,185,129,0.15);color:var(--emerald)}
+.tag-pending{background:rgba(245,158,11,0.15);color:var(--yellow)}
+.tag-failed{background:rgba(239,68,68,0.15);color:var(--red)}
 
-    /* Pagination */
-    .pagination{display:flex;align-items:center;justify-content:space-between;padding:10px 0;font-size:12px;color:var(--t2)}
-    .page-btns{display:flex;gap:4px}
-    .page-btn{padding:5px 10px;border:1px solid var(--bd);border-radius:4px;cursor:pointer;background:transparent;color:var(--t2);font-size:11px}
-    .page-btn.active{background:var(--a1);color:#fff;border-color:var(--a1)}
+/* Score bar */
+.score-bar{display:flex;align-items:center;gap:8px}
+.score-track{flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;max-width:80px}
+.score-fill{height:100%;border-radius:2px;transition:width .3s}
+.score-num{font-size:12px;font-weight:510;font-family:'JetBrains Mono',monospace;min-width:24px}
 
-    /* Section */
-    .section{display:none}
-    .section.active{display:block}
+/* Filters */
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.filter-bar select,.filter-bar input{background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-btn);padding:6px 10px;font-size:13px;color:var(--text-body);outline:none;min-width:120px}
+.filter-bar select:focus,.filter-bar input:focus{border-color:var(--accent)}
+.filter-bar select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238a8f98' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center;padding-right:28px}
 
-    /* Loading */
-    .loading{text-align:center;padding:40px;color:var(--t2)}
-    .spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--bd);border-top-color:var(--a1);border-radius:50%;animation:spin .6s linear infinite;margin-bottom:8px}
-    @keyframes spin{to{transform:rotate(360deg)}}
+/* Pagination */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:12px 16px}
+.pagination .info{font-size:12px;color:var(--text-muted)}
+.pagination .pages{display:flex;gap:4px}
+.pagination .pages button{min-width:32px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-btn);border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:12px;cursor:pointer;transition:all .15s}
+.pagination .pages button:hover{background:rgba(255,255,255,0.06);color:var(--text-body)}
+.pagination .pages button.active{background:var(--accent);border-color:var(--accent);color:#fff}
+.pagination .pages button:disabled{opacity:0.3;cursor:not-allowed}
 
-    @media(max-width:800px){.stats{grid-template-columns:repeat(2,1fr)}.sidebar{display:none}.main{margin-left:0}}
-  </style>
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:100;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal{background:var(--bg-panel);border:1px solid var(--border);border-radius:var(--radius-card);padding:24px;width:480px;max-width:90vw;max-height:90vh;overflow-y:auto;transform:scale(0.95);transition:transform .2s}
+.modal-overlay.show .modal{transform:scale(1)}
+.modal h2{font-size:16px;font-weight:590;color:var(--text-primary);margin-bottom:20px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12px;font-weight:510;color:var(--text-muted);margin-bottom:6px}
+.form-group input,.form-group select{width:100%;background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-btn);padding:8px 12px;font-size:13px;color:var(--text-body);outline:none}
+.form-group input:focus,.form-group select:focus{border-color:var(--accent)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:24px}
+
+/* Charts (simple CSS) */
+.chart-bars{display:flex;align-items:flex-end;gap:6px;height:140px;padding-top:8px}
+.chart-bar{flex:1;border-radius:4px 4px 0 0;min-width:20px;transition:height .3s;position:relative;cursor:default}
+.chart-bar:hover{opacity:0.85}
+.chart-bar .tooltip{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-btn);padding:4px 8px;font-size:11px;color:var(--text-primary);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}
+.chart-bar:hover .tooltip{opacity:1}
+.chart-labels{display:flex;gap:6px;margin-top:6px}
+.chart-labels span{flex:1;text-align:center;font-size:11px;color:var(--text-subtle)}
+
+.intent-list{display:flex;flex-direction:column;gap:8px}
+.intent-item{display:flex;align-items:center;gap:12px}
+.intent-item .name{font-size:13px;color:var(--text-body);min-width:60px}
+.intent-item .bar-bg{flex:1;height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden}
+.intent-item .bar-fill{height:100%;border-radius:3px;background:var(--accent)}
+.intent-item .count{font-size:12px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;min-width:32px;text-align:right}
+
+/* Loading / Empty */
+.loading{display:flex;align-items:center;justify-content:center;padding:60px;color:var(--text-muted);gap:8px}
+.spinner{width:16px;height:16px;border:2px solid rgba(255,255,255,0.1);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:60px 20px;color:var(--text-subtle)}
+.empty svg{width:40px;height:40px;margin-bottom:12px;opacity:0.4}
+.empty p{font-size:13px}
+
+/* Toast */
+.toast-container{position:fixed;top:16px;right:16px;z-index:200;display:flex;flex-direction:column;gap:8px}
+.toast{background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-btn);padding:10px 16px;font-size:13px;color:var(--text-body);transform:translateX(120%);transition:transform .3s;max-width:320px}
+.toast.show{transform:translateX(0)}
+.toast.success{border-left:3px solid var(--green)}
+.toast.error{border-left:3px solid var(--red)}
+
+/* Page transitions */
+.page{display:none;animation:fadeIn .2s ease}
+.page.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* Responsive */
+.mobile-menu-btn{display:none;background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px}
+@media(max-width:768px){
+.sidebar{position:fixed;left:-240px;top:0;bottom:0;z-index:50;transition:left .25s;width:240px}
+.sidebar.open{left:0}
+.sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:49;display:none}
+.sidebar-overlay.show{display:block}
+.mobile-menu-btn{display:flex}
+.stats-grid{grid-template-columns:1fr 1fr}
+.grid-2,.grid-3{grid-template-columns:1fr}
+.content{padding:16px}
+.filter-bar{flex-direction:column}
+.filter-bar select,.filter-bar input{min-width:100%}
+}
+
+/* Monospace */
+.mono{font-family:'JetBrains Mono',monospace;font-size:12px}
+.text-muted{color:var(--text-muted)}
+.text-subtle{color:var(--text-subtle)}
+.mt-24{margin-top:24px}
+.mb-16{margin-bottom:16px}
+.mb-24{margin-bottom:24px}
+</style>
 </head>
 <body>
+<div class="app">
+  <!-- Sidebar Overlay (mobile) -->
+  <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
   <!-- Sidebar -->
-  <div class="sidebar">
-    <h1>评论<span>AI</span></h1>
-    <div class="nav-item active" onclick="showSection('dashboard')">📊 数据看板</div>
-    <div class="nav-item" onclick="showSection('accounts')">📱 平台账号</div>
-    <div class="nav-item" onclick="showSection('leads')">👤 潜客管理</div>
-    <div class="nav-item" onclick="showSection('logs')">📋 分析日志</div>
-    <div class="nav-item" onclick="showSection('replies')">💬 回复记录</div>
-    <div class="nav-item" onclick="runDemo()">▶ 运行演示</div>
-  </div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span>Comment AI</span>
+    </div>
+    <div class="nav-section">概览</div>
+    <div class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span>仪表盘</span>
+    </div>
+    <div class="nav-section">管理</div>
+    <div class="nav-item" data-page="accounts" onclick="switchPage('accounts')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>平台账号</span>
+    </div>
+    <div class="nav-item" data-page="leads" onclick="switchPage('leads')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      <span>线索管理</span>
+    </div>
+    <div class="nav-item" data-page="logs" onclick="switchPage('logs')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      <span>分析日志</span>
+    </div>
+    <div class="nav-item" data-page="replies" onclick="switchPage('replies')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg>
+      <span>回复记录</span>
+    </div>
+    <div class="sidebar-footer">
+      <button class="btn btn-secondary btn-sm" onclick="runDemo()" style="width:100%;justify-content:center;margin-bottom:8px">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        运行 Demo
+      </button>
+      <div class="scheduler-bar">
+        <div class="status-dot off" id="schedDot"></div>
+        <span id="schedLabel">调度器已停止</span>
+        <div style="flex:1"></div>
+        <button class="btn-icon btn-sm" onclick="schedAction('start')" title="启动"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21"/></svg></button>
+        <button class="btn-icon btn-sm" onclick="schedAction('stop')" title="停止"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg></button>
+        <button class="btn-icon btn-sm" onclick="schedAction('tick')" title="手动执行"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
+      </div>
+    </div>
+  </aside>
 
   <div class="main">
-    <!-- ═══ Dashboard ═══ -->
-    <div class="section active" id="sec-dashboard">
-      <div class="page-header"><div class="page-title">数据看板</div></div>
-      <div class="stats" id="overview-stats"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-        <div class="card"><div class="card-header"><h3>按平台</h3></div><div id="stats-platform" style="padding:14px"></div></div>
-        <div class="card"><div class="card-header"><h3>按意图</h3></div><div id="stats-intent" style="padding:14px"></div></div>
+    <header class="topbar">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="mobile-menu-btn" onclick="toggleSidebar()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <h1 id="pageTitle">仪表盘</h1>
       </div>
-      <div class="card" style="margin-top:16px"><div class="card-header"><h3>近7天趋势</h3></div><div id="stats-trend" style="padding:14px"></div></div>
-    </div>
+      <div class="topbar-actions">
+        <span class="mono text-muted" id="healthBadge">检查中…</span>
+      </div>
+    </header>
 
-    <!-- ═══ Accounts ═══ -->
-    <div class="section" id="sec-accounts">
-      <div class="page-header">
-        <div class="page-title">平台账号管理</div>
-        <button class="btn btn-p" onclick="showAccountModal()">+ 添加账号</button>
-      </div>
-      <div class="filter-bar">
-        <select id="acc-filter-platform" onchange="loadAccounts()">
-          <option value="">全部平台</option>
-          <option value="douyin">抖音</option>
-          <option value="xiaohongshu">小红书</option>
-          <option value="wechat_video">视频号</option>
-          <option value="bilibili">B站</option>
-        </select>
-        <select id="acc-filter-status" onchange="loadAccounts()">
-          <option value="">全部状态</option>
-          <option value="active">启用</option>
-          <option value="paused">暂停</option>
-          <option value="error">异常</option>
-        </select>
-      </div>
-      <div class="card">
-        <table>
-          <thead><tr><th>ID</th><th>平台</th><th>账号</th><th>昵称</th><th>状态</th><th>备注</th><th>创建时间</th><th>操作</th></tr></thead>
-          <tbody id="accounts-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ═══ Leads ═══ -->
-    <div class="section" id="sec-leads">
-      <div class="page-header">
-        <div class="page-title">潜客管理 <span class="badge" id="leads-count">0</span></div>
-        <button class="btn btn-g" onclick="exportLeads()">📥 导出CSV</button>
-      </div>
-      <div class="filter-bar">
-        <select id="lead-filter-platform" onchange="loadLeads()">
-          <option value="">全部平台</option>
-          <option value="douyin">抖音</option>
-          <option value="xiaohongshu">小红书</option>
-          <option value="wechat_video">视频号</option>
-          <option value="bilibili">B站</option>
-        </select>
-        <select id="lead-filter-status" onchange="loadLeads()">
-          <option value="">全部状态</option>
-          <option value="new">新潜客</option>
-          <option value="contacted">已联系</option>
-          <option value="converted">已转化</option>
-          <option value="lost">已流失</option>
-        </select>
-        <input type="number" id="lead-filter-score" placeholder="最低评分" step="0.1" min="0" max="1" style="width:100px" onchange="loadLeads()">
-        <input type="datetime-local" id="lead-filter-start" onchange="loadLeads()">
-        <input type="datetime-local" id="lead-filter-end" onchange="loadLeads()">
-        <button class="btn btn-g btn-sm" onclick="clearLeadFilters()">清除</button>
-      </div>
-      <div class="card">
-        <table>
-          <thead><tr><th>ID</th><th>平台</th><th>昵称</th><th>评分</th><th>首条评论</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
-          <tbody id="leads-tbody"></tbody>
-        </table>
-        <div class="pagination" id="leads-pagination"></div>
-      </div>
-    </div>
-
-    <!-- ═══ Logs ═══ -->
-    <div class="section" id="sec-logs">
-      <div class="page-header"><div class="page-title">分析日志</div></div>
-      <div class="filter-bar">
-        <select id="log-filter-platform" onchange="loadLogs()">
-          <option value="">全部平台</option>
-          <option value="douyin">抖音</option>
-          <option value="xiaohongshu">小红书</option>
-          <option value="wechat_video">视频号</option>
-          <option value="bilibili">B站</option>
-        </select>
-        <select id="log-filter-intent" onchange="loadLogs()">
-          <option value="">全部意图</option>
-          <option value="potential_lead">潜客</option>
-          <option value="inquiry">咨询</option>
-          <option value="complaint">投诉</option>
-          <option value="praise">好评</option>
-          <option value="spam">垃圾</option>
-          <option value="neutral">中立</option>
-        </select>
-        <input type="text" id="log-filter-author" placeholder="搜索用户昵称" style="width:140px" onkeyup="debounceLoadLogs()">
-        <input type="datetime-local" id="log-filter-start" onchange="loadLogs()">
-        <input type="datetime-local" id="log-filter-end" onchange="loadLogs()">
-        <button class="btn btn-g btn-sm" onclick="clearLogFilters()">清除</button>
-      </div>
-      <div class="card">
-        <table>
-          <thead><tr><th>ID</th><th>平台</th><th>用户</th><th>评论</th><th>评分</th><th>意图</th><th>回复</th><th>时间</th></tr></thead>
-          <tbody id="logs-tbody"></tbody>
-        </table>
-        <div class="pagination" id="logs-pagination"></div>
-      </div>
-    </div>
-
-    <!-- ═══ Replies ═══ -->
-    <div class="section" id="sec-replies">
-      <div class="page-header"><div class="page-title">回复记录</div></div>
-      <div class="filter-bar">
-        <select id="reply-filter-platform" onchange="loadReplies()">
-          <option value="">全部平台</option>
-          <option value="douyin">抖音</option>
-          <option value="xiaohongshu">小红书</option>
-          <option value="wechat_video">视频号</option>
-          <option value="bilibili">B站</option>
-        </select>
-        <select id="reply-filter-status" onchange="loadReplies()">
-          <option value="">全部状态</option>
-          <option value="sent">已发送</option>
-          <option value="pending">待发送</option>
-          <option value="failed">失败</option>
-        </select>
-      </div>
-      <div class="card">
-        <table>
-          <thead><tr><th>ID</th><th>平台</th><th>评论ID</th><th>回复内容</th><th>状态</th><th>错误信息</th><th>时间</th></tr></thead>
-          <tbody id="replies-tbody"></tbody>
-        </table>
-        <div class="pagination" id="replies-pagination"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Account Modal -->
-  <div class="modal-overlay" id="account-modal">
-    <div class="modal">
-      <div class="modal-header">
-        <h3 id="modal-title">添加账号</h3>
-        <button class="modal-close" onclick="closeModal()">&times;</button>
-      </div>
-      <div class="modal-body">
-        <input type="hidden" id="acc-edit-id">
-        <div class="form-group"><label>平台</label>
-          <select id="acc-platform">
-            <option value="douyin">抖音</option>
-            <option value="xiaohongshu">小红书</option>
-            <option value="wechat_video">视频号</option>
-            <option value="bilibili">B站</option>
-          </select>
+    <div class="content">
+      <!-- Dashboard Page -->
+      <div class="page active" id="page-dashboard">
+        <div class="stats-grid" id="overviewStats">
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(94,106,210,0.12);color:var(--accent)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div><div class="stat-label">平台账号</div><div class="stat-value" id="sv-accounts">-</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(16,185,129,0.12);color:var(--emerald)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><div class="stat-label">线索总数</div><div class="stat-value" id="sv-leads">-</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(245,158,11,0.12);color:var(--yellow)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div><div class="stat-label">已分析</div><div class="stat-value" id="sv-analyzed">-</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(129,143,255,0.12);color:var(--hover)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg></div><div class="stat-label">已回复</div><div class="stat-value" id="sv-replies">-</div></div>
         </div>
-        <div class="form-group"><label>平台账号ID</label><input type="text" id="acc-account-id" placeholder="如: 抖音uid / B站mid"></div>
-        <div class="form-group"><label>账号昵称</label><input type="text" id="acc-account-name" placeholder="显示名称"></div>
-        <div class="form-group"><label>主页链接</label><input type="text" id="acc-account-url" placeholder="https://..."></div>
-        <div class="form-group"><label>凭证配置 (JSON)</label><textarea id="acc-config" placeholder='{"cookie":"...","token":"..."}'></textarea></div>
-        <div class="form-group"><label>备注</label><textarea id="acc-remark" placeholder="运营备注"></textarea></div>
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-title">平台分布</div>
+            <div class="chart-bars" id="platformChart"></div>
+            <div class="chart-labels" id="platformLabels"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">意图分布</div>
+            <div class="intent-list" id="intentChart"></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">近 7 天趋势</div>
+          <div class="chart-bars" id="trendChart" style="height:160px"></div>
+          <div class="chart-labels" id="trendLabels"></div>
+        </div>
       </div>
-      <div class="modal-footer">
-        <button class="btn btn-g" onclick="closeModal()">取消</button>
-        <button class="btn btn-p" onclick="saveAccount()">保存</button>
+
+      <!-- Accounts Page -->
+      <div class="page" id="page-accounts">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+          <div class="filter-bar" style="margin-bottom:0">
+            <select id="accFilterPlatform" onchange="loadAccounts()"><option value="">全部平台</option><option value="douyin">抖音</option><option value="xiaohongshu">小红书</option><option value="wechat_video">视频号</option><option value="bilibili">B站</option></select>
+          </div>
+          <button class="btn btn-primary" onclick="openAccountModal()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> 添加账号</button>
+        </div>
+        <div class="table-wrap"><table><thead><tr><th>平台</th><th>账号名</th><th>账号 ID</th><th>状态</th><th>创建时间</th><th style="width:100px">操作</th></tr></thead><tbody id="accTableBody"></tbody></table></div>
+        <div class="loading" id="accLoading" style="display:none"><div class="spinner"></div> 加载中…</div>
+        <div class="empty" id="accEmpty" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg><p>暂无账号，点击右上角添加</p></div>
+      </div>
+
+      <!-- Leads Page -->
+      <div class="page" id="page-leads">
+        <div class="filter-bar">
+          <select id="leadFilterPlatform" onchange="loadLeads()"><option value="">全部平台</option><option value="douyin">抖音</option><option value="xiaohongshu">小红书</option><option value="wechat_video">视频号</option><option value="bilibili">B站</option></select>
+          <select id="leadFilterStatus" onchange="loadLeads()"><option value="">全部状态</option><option value="pending">待处理</option><option value="replied">已回复</option><option value="ignored">已忽略</option></select>
+          <input type="number" id="leadFilterScore" placeholder="最低分" min="0" max="100" style="width:90px" onchange="loadLeads()">
+          <input type="date" id="leadFilterStart" onchange="loadLeads()">
+          <input type="date" id="leadFilterEnd" onchange="loadLeads()">
+          <div style="flex:1"></div>
+          <button class="btn btn-secondary btn-sm" onclick="exportLeads()"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 导出 CSV</button>
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>平台</th><th>作者</th><th>内容</th><th>评分</th><th>状态</th><th>时间</th><th style="width:120px">操作</th></tr></thead><tbody id="leadTableBody"></tbody></table>
+          <div class="pagination" id="leadPagination"></div>
+        </div>
+        <div class="loading" id="leadLoading" style="display:none"><div class="spinner"></div> 加载中…</div>
+        <div class="empty" id="leadEmpty" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><p>暂无线索数据</p></div>
+      </div>
+
+      <!-- Logs Page -->
+      <div class="page" id="page-logs">
+        <div class="filter-bar">
+          <select id="logFilterPlatform" onchange="loadLogs()"><option value="">全部平台</option><option value="douyin">抖音</option><option value="xiaohongshu">小红书</option><option value="wechat_video">视频号</option><option value="bilibili">B站</option></select>
+          <select id="logFilterIntent" onchange="loadLogs()"><option value="">全部意图</option><option value="purchase">购买意向</option><option value="comparison">对比咨询</option><option value="pain_point">痛点求助</option><option value="general">一般评论</option></select>
+          <input type="text" id="logFilterAuthor" placeholder="搜索作者" onchange="loadLogs()">
+          <input type="date" id="logFilterStart" onchange="loadLogs()">
+          <input type="date" id="logFilterEnd" onchange="loadLogs()">
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>平台</th><th>作者</th><th>原始评论</th><th>意图</th><th>评分</th><th>时间</th></tr></thead><tbody id="logTableBody"></tbody></table>
+          <div class="pagination" id="logPagination"></div>
+        </div>
+        <div class="loading" id="logLoading" style="display:none"><div class="spinner"></div> 加载中…</div>
+        <div class="empty" id="logEmpty" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><p>暂无分析日志</p></div>
+      </div>
+
+      <!-- Replies Page -->
+      <div class="page" id="page-replies">
+        <div class="filter-bar">
+          <select id="replyFilterPlatform" onchange="loadReplies()"><option value="">全部平台</option><option value="douyin">抖音</option><option value="xiaohongshu">小红书</option><option value="wechat_video">视频号</option><option value="bilibili">B站</option></select>
+          <select id="replyFilterStatus" onchange="loadReplies()"><option value="">全部状态</option><option value="sent">已发送</option><option value="pending">待发送</option><option value="failed">失败</option></select>
+        </div>
+        <div class="table-wrap">
+          <table><thead><tr><th>平台</th><th>目标作者</th><th>回复内容</th><th>状态</th><th>时间</th></tr></thead><tbody id="replyTableBody"></tbody></table>
+          <div class="pagination" id="replyPagination"></div>
+        </div>
+        <div class="loading" id="replyLoading" style="display:none"><div class="spinner"></div> 加载中…</div>
+        <div class="empty" id="replyEmpty" style="display:none"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/></svg><p>暂无回复记录</p></div>
       </div>
     </div>
   </div>
+</div>
 
-  <script>
-    const API = '/api/v1';
-    const PLAT_LABELS = {douyin:'抖音',xiaohongshu:'小红书',wechat_video:'视频号',bilibili:'B站'};
-    const PLAT_TAG = {douyin:'tag-dy',xiaohongshu:'tag-xhs',wechat_video:'tag-wx',bilibili:'tag-bili'};
-    const STATUS_LABELS = {active:'启用',paused:'暂停',error:'异常',new:'新潜客',contacted:'已联系',converted:'已转化',lost:'已流失',sent:'已发送',pending:'待发送',failed:'失败'};
+<!-- Account Modal -->
+<div class="modal-overlay" id="accountModal">
+  <div class="modal">
+    <h2 id="accModalTitle">添加账号</h2>
+    <input type="hidden" id="accEditId">
+    <div class="form-group">
+      <label>平台</label>
+      <select id="accFormPlatform"><option value="douyin">抖音</option><option value="xiaohongshu">小红书</option><option value="wechat_video">视频号</option><option value="bilibili">B站</option></select>
+    </div>
+    <div class="form-group">
+      <label>账号名</label>
+      <input type="text" id="accFormName" placeholder="输入账号显示名称">
+    </div>
+    <div class="form-group">
+      <label>账号 ID</label>
+      <input type="text" id="accFormId" placeholder="平台账号 ID">
+    </div>
+    <div class="form-group">
+      <label>状态</label>
+      <select id="accFormStatus"><option value="active">启用</option><option value="paused">暂停</option><option value="error">异常</option></select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeAccountModal()">取消</button>
+      <button class="btn btn-primary" onclick="saveAccount()">保存</button>
+    </div>
+  </div>
+</div>
 
-    function showSection(name) {
-      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-      document.getElementById('sec-' + name).classList.add('active');
-      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-      event.target.classList.add('active');
-      if (name === 'dashboard') loadDashboard();
-      if (name === 'accounts') loadAccounts();
-      if (name === 'leads') loadLeads();
-      if (name === 'logs') loadLogs();
-      if (name === 'replies') loadReplies();
-    }
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
 
-    async function api(path, opts = {}) {
-      const r = await fetch(API + path, { headers: {'Content-Type':'application/json'}, ...opts });
-      return r.json();
-    }
+<script>
+const API = '';
+const PLATFORMS = {
+  douyin:{label:'抖音',color:'#fe2c55'},
+  xiaohongshu:{label:'小红书',color:'#ff2d55'},
+  wechat_video:{label:'视频号',color:'#07c160'},
+  bilibili:{label:'B站',color:'#00a1d6'}
+};
+const INTENTS = {
+  purchase:'购买意向',comparison:'对比咨询',pain_point:'痛点求助',
+  general:'一般评论',spam:'垃圾信息'
+};
+const STATUS_LABELS = {active:'启用',paused:'暂停',error:'异常',pending:'待处理',replied:'已回复',ignored:'已忽略',sent:'已发送',failed:'失败'};
 
-    // ─── Dashboard ───
-    async function loadDashboard() {
-      const [ov, bp, bi, tr] = await Promise.all([
-        api('/stats/overview'), api('/stats/by-platform'),
-        api('/stats/by-intent'), api('/stats/trend?days=7'),
-      ]);
-      document.getElementById('overview-stats').innerHTML = `
-        <div class="stat"><div class="label">平台账号</div><div class="value a">${ov.accounts}</div></div>
-        <div class="stat"><div class="label">潜客总数</div><div class="value c">${ov.leads}</div></div>
-        <div class="stat"><div class="label">分析评论</div><div class="value g">${ov.analyzed}</div></div>
-        <div class="stat"><div class="label">已回复</div><div class="value y">${ov.replies_sent}</div></div>`;
-      document.getElementById('stats-platform').innerHTML = bp.length ? bp.map(p =>
-        `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bd)">
-          <span class="tag ${PLAT_TAG[p.platform]||''}">${PLAT_LABELS[p.platform]||p.platform}</span>
-          <span>${p.leads} 潜客 · 均分 ${p.avg_score}</span></div>`).join('') : '<div style="color:var(--t2)">暂无数据</div>';
-      document.getElementById('stats-intent').innerHTML = bi.length ? bi.map(i =>
-        `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bd)">
-          <span>${i.intent}</span><span>${i.count} 条</span></div>`).join('') : '<div style="color:var(--t2)">暂无数据</div>';
-      document.getElementById('stats-trend').innerHTML = tr.length ? `<table><thead><tr><th>日期</th><th>数量</th><th>均分</th></tr></thead><tbody>${tr.map(t =>
-        `<tr><td>${t.day}</td><td>${t.count}</td><td>${t.avg_score}</td></tr>`).join('')}</tbody></table>` : '<div style="color:var(--t2)">暂无数据</div>';
-    }
+let currentPage = 'dashboard';
+let leadPage = 1, logPage = 1, replyPage = 1;
+const PAGE_SIZE = 20;
 
-    // ─── Accounts ───
-    async function loadAccounts() {
-      const platform = document.getElementById('acc-filter-platform').value;
-      const status = document.getElementById('acc-filter-status').value;
-      const params = new URLSearchParams();
-      if (platform) params.set('platform', platform);
-      if (status) params.set('status', status);
-      const data = await api('/accounts?' + params);
-      const tbody = document.getElementById('accounts-tbody');
-      tbody.innerHTML = data.accounts.map(a => `<tr>
-        <td>${a.id}</td>
-        <td><span class="tag ${PLAT_TAG[a.platform]||''}">${PLAT_LABELS[a.platform]||a.platform}</span></td>
-        <td>${a.account_id}</td>
-        <td>${a.account_name}</td>
-        <td><span class="tag tag-${a.status}">${STATUS_LABELS[a.status]||a.status}</span></td>
-        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${a.remark||'-'}</td>
-        <td>${a.created_at ? new Date(a.created_at).toLocaleString('zh-CN') : '-'}</td>
-        <td><button class="btn btn-g btn-sm" onclick="editAccount(${a.id})">编辑</button>
-            <button class="btn btn-r btn-sm" onclick="deleteAccount(${a.id})" style="margin-left:4px">删除</button></td>
-      </tr>`).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--t2)">暂无账号，点击上方添加</td></tr>';
-    }
+// --- Utilities ---
+async function api(path, opts = {}) {
+  try {
+    const res = await fetch(API + path, { headers: { 'Content-Type': 'application/json' }, ...opts });
+    if (!res.ok) throw new Error(`${res.status}`);
+    const ct = res.headers.get('content-type') || '';
+    return ct.includes('json') ? await res.json() : await res.text();
+  } catch (e) { console.error('API error:', path, e); throw e; }
+}
 
-    function showAccountModal(acc) {
-      document.getElementById('acc-edit-id').value = acc ? acc.id : '';
-      document.getElementById('acc-platform').value = acc ? acc.platform : 'douyin';
-      document.getElementById('acc-account-id').value = acc ? acc.account_id : '';
-      document.getElementById('acc-account-name').value = acc ? acc.account_name : '';
-      document.getElementById('acc-account-url').value = acc ? acc.account_url || '' : '';
-      document.getElementById('acc-config').value = acc ? acc.config || '' : '';
-      document.getElementById('acc-remark').value = acc ? acc.remark || '' : '';
-      document.getElementById('modal-title').textContent = acc ? '编辑账号' : '添加账号';
-      document.getElementById('acc-account-id').disabled = !!acc;
-      document.getElementById('account-modal').classList.add('show');
-    }
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById('toastContainer').appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 300); }, 3000);
+}
 
-    function closeModal() { document.getElementById('account-modal').classList.remove('show'); }
+function platformTag(p) {
+  const info = PLATFORMS[p] || { label: p, color: '#888' };
+  return `<span class="tag tag-${p}" style="background:${info.color}20;color:${info.color}">${info.label}</span>`;
+}
 
-    async function saveAccount() {
-      const id = document.getElementById('acc-edit-id').value;
-      const data = {
-        platform: document.getElementById('acc-platform').value,
-        account_id: document.getElementById('acc-account-id').value,
-        account_name: document.getElementById('acc-account-name').value,
-        account_url: document.getElementById('acc-account-url').value || null,
-        config: document.getElementById('acc-config').value || null,
-        remark: document.getElementById('acc-remark').value || null,
-      };
-      if (!data.account_id || !data.account_name) return alert('账号ID和昵称必填');
-      if (id) {
-        const {account_id, ...update} = data;
-        await api('/accounts/' + id, { method: 'PUT', body: JSON.stringify(update) });
-      } else {
-        await api('/accounts', { method: 'POST', body: JSON.stringify(data) });
-      }
-      closeModal(); loadAccounts();
-    }
+function statusTag(s) {
+  return `<span class="tag tag-${s}">${STATUS_LABELS[s] || s}</span>`;
+}
 
-    async function editAccount(id) {
-      const data = await api('/accounts/' + id);
-      showAccountModal(data);
-    }
+function scoreBar(score) {
+  const c = score >= 80 ? 'var(--green)' : score >= 50 ? 'var(--yellow)' : 'var(--red)';
+  return `<div class="score-bar"><div class="score-track"><div class="score-fill" style="width:${score}%;background:${c}"></div></div><span class="score-num" style="color:${c}">${score}</span></div>`;
+}
 
-    async function deleteAccount(id) {
-      if (!confirm('确认删除？')) return;
-      await api('/accounts/' + id, { method: 'DELETE' });
-      loadAccounts();
-    }
+function timeStr(t) {
+  if (!t) return '-';
+  return new Date(t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
 
-    // ─── Leads ───
-    let leadsPage = 1;
-    async function loadLeads() {
-      const params = new URLSearchParams({page: leadsPage, page_size: 20});
-      const platform = document.getElementById('lead-filter-platform').value;
-      const status = document.getElementById('lead-filter-status').value;
-      const score = document.getElementById('lead-filter-score').value;
-      const start = document.getElementById('lead-filter-start').value;
-      const end = document.getElementById('lead-filter-end').value;
-      if (platform) params.set('platform', platform);
-      if (status) params.set('status', status);
-      if (score) params.set('min_score', score);
-      if (start) params.set('start_time', new Date(start).toISOString());
-      if (end) params.set('end_time', new Date(end).toISOString());
-      const data = await api('/leads?' + params);
-      document.getElementById('leads-count').textContent = data.total;
-      const tbody = document.getElementById('leads-tbody');
-      tbody.innerHTML = data.leads.map(l => {
-        const sc = l.lead_score >= 0.7 ? 'var(--rd)' : l.lead_score >= 0.4 ? 'var(--yl)' : 'var(--t2)';
-        return `<tr>
-          <td>${l.id}</td>
-          <td><span class="tag ${PLAT_TAG[l.platform]||''}">${PLAT_LABELS[l.platform]||l.platform}</span></td>
-          <td>${l.author_name}</td>
-          <td><div class="score-bar"><span>${l.lead_score.toFixed(2)}</span><div class="score-fill"><div style="width:${l.lead_score*100}%;background:${sc}"></div></div></div></td>
-          <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis">${l.first_comment_content||'-'}</td>
-          <td><span class="tag tag-${l.status}">${STATUS_LABELS[l.status]||l.status}</span></td>
-          <td>${l.created_at ? new Date(l.created_at).toLocaleString('zh-CN') : '-'}</td>
-          <td><select class="btn btn-sm" style="background:var(--s2);border:1px solid var(--bd);color:var(--t1)" onchange="updateLeadStatus(${l.id},this.value)">
-            ${['new','contacted','converted','lost'].map(s => `<option value="${s}" ${s===l.status?'selected':''}>${STATUS_LABELS[s]}</option>`).join('')}
-          </select></td>
-        </tr>`;
-      }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--t2)">暂无潜客数据</td></tr>';
-      renderPagination('leads-pagination', data, (p) => { leadsPage = p; loadLeads(); });
-    }
+function truncate(s, n) { return s && s.length > n ? s.slice(0, n) + '…' : (s || '-'); }
 
-    function clearLeadFilters() {
-      ['lead-filter-platform','lead-filter-status','lead-filter-score','lead-filter-start','lead-filter-end'].forEach(id => document.getElementById(id).value = '');
-      leadsPage = 1; loadLeads();
-    }
+function paginationHTML(containerId, total, page, pageSize, loadFn) {
+  const el = document.getElementById(containerId);
+  const totalPages = Math.ceil(total / pageSize) || 1;
+  let html = `<div class="info">共 ${total} 条，第 ${page}/${totalPages} 页</div><div class="pages">`;
+  html += `<button ${page <= 1 ? 'disabled' : ''} onclick="${loadFn}(${page - 1})">‹</button>`;
+  const start = Math.max(1, page - 2), end = Math.min(totalPages, page + 2);
+  for (let i = start; i <= end; i++) html += `<button class="${i === page ? 'active' : ''}" onclick="${loadFn}(${i})">${i}</button>`;
+  html += `<button ${page >= totalPages ? 'disabled' : ''} onclick="${loadFn}(${page + 1})">›</button></div>`;
+  el.innerHTML = html;
+}
 
-    async function updateLeadStatus(id, status) {
-      await api(`/leads/${id}/status?status=${status}`, {method:'PUT'});
-      loadLeads();
-    }
+// --- Navigation ---
+function switchPage(page) {
+  currentPage = page;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.toggle('active', n.dataset.page === page));
+  const titles = { dashboard: '仪表盘', accounts: '平台账号', leads: '线索管理', logs: '分析日志', replies: '回复记录' };
+  document.getElementById('pageTitle').textContent = titles[page] || page;
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('show');
+  if (page === 'dashboard') loadDashboard();
+  else if (page === 'accounts') loadAccounts();
+  else if (page === 'leads') loadLeads();
+  else if (page === 'logs') loadLogs();
+  else if (page === 'replies') loadReplies();
+}
 
-    function exportLeads() {
-      const platform = document.getElementById('lead-filter-platform').value;
-      const status = document.getElementById('lead-filter-status').value;
-      const params = new URLSearchParams();
-      if (platform) params.set('platform', platform);
-      if (status) params.set('status', status);
-      window.open(API + '/leads/export?' + params, '_blank');
-    }
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+  document.getElementById('sidebarOverlay').classList.toggle('show');
+}
 
-    // ─── Logs ───
-    let logsPage = 1;
-    let logDebounce;
-    function debounceLoadLogs() { clearTimeout(logDebounce); logDebounce = setTimeout(loadLogs, 400); }
+// --- Dashboard ---
+async function loadDashboard() {
+  try {
+    const [overview, byPlatform, byIntent, trend] = await Promise.all([
+      api('/api/v1/stats/overview').catch(() => ({})),
+      api('/api/v1/stats/by-platform').catch(() => []),
+      api('/api/v1/stats/by-intent').catch(() => []),
+      api('/api/v1/stats/trend').catch(() => [])
+    ]);
+    // Overview
+    document.getElementById('sv-accounts').textContent = overview.total_accounts ?? '-';
+    document.getElementById('sv-leads').textContent = overview.total_leads ?? '-';
+    document.getElementById('sv-analyzed').textContent = overview.total_analyzed ?? '-';
+    document.getElementById('sv-replies').textContent = overview.total_replies ?? '-';
+    // Platform chart
+    const pData = Array.isArray(byPlatform) ? byPlatform : (byPlatform.data || []);
+    const pMax = Math.max(...pData.map(d => d.count || d.total || 0), 1);
+    const pChart = document.getElementById('platformChart');
+    const pLabels = document.getElementById('platformLabels');
+    pChart.innerHTML = pData.map(d => {
+      const v = d.count || d.total || 0;
+      const info = PLATFORMS[d.platform] || { color: '#888', label: d.platform };
+      return `<div class="chart-bar" style="height:${(v / pMax) * 100}%;background:${info.color}"><div class="tooltip">${info.label}: ${v}</div></div>`;
+    }).join('');
+    pLabels.innerHTML = pData.map(d => `<span>${(PLATFORMS[d.platform] || { label: d.platform }).label}</span>`).join('');
+    // Intent chart
+    const iData = Array.isArray(byIntent) ? byIntent : (byIntent.data || []);
+    const iMax = Math.max(...iData.map(d => d.count || d.total || 0), 1);
+    document.getElementById('intentChart').innerHTML = iData.map(d => {
+      const v = d.count || d.total || 0;
+      return `<div class="intent-item"><span class="name">${INTENTS[d.intent] || d.intent}</span><div class="bar-bg"><div class="bar-fill" style="width:${(v / iMax) * 100}%"></div></div><span class="count">${v}</span></div>`;
+    }).join('') || '<div class="empty"><p>暂无数据</p></div>';
+    // Trend chart
+    const tData = Array.isArray(trend) ? trend : (trend.data || []);
+    const tMax = Math.max(...tData.map(d => d.count || d.total || 0), 1);
+    const tChart = document.getElementById('trendChart');
+    const tLabels = document.getElementById('trendLabels');
+    tChart.innerHTML = tData.map(d => {
+      const v = d.count || d.total || 0;
+      return `<div class="chart-bar" style="height:${(v / tMax) * 100}%;background:var(--accent)"><div class="tooltip">${d.date || d.day}: ${v}</div></div>`;
+    }).join('');
+    tLabels.innerHTML = tData.map(d => `<span>${(d.date || d.day || '').slice(5)}</span>`).join('');
+  } catch (e) { toast('加载仪表盘失败', 'error'); }
+}
 
-    async function loadLogs() {
-      const params = new URLSearchParams({page: logsPage, page_size: 20});
-      const platform = document.getElementById('log-filter-platform').value;
-      const intent = document.getElementById('log-filter-intent').value;
-      const author = document.getElementById('log-filter-author').value;
-      const start = document.getElementById('log-filter-start').value;
-      const end = document.getElementById('log-filter-end').value;
-      if (platform) params.set('platform', platform);
-      if (intent) params.set('intent', intent);
-      if (author) params.set('author_name', author);
-      if (start) params.set('start_time', new Date(start).toISOString());
-      if (end) params.set('end_time', new Date(end).toISOString());
-      const data = await api('/logs?' + params);
-      const tbody = document.getElementById('logs-tbody');
-      tbody.innerHTML = data.logs.map(l => {
-        const sc = l.score >= 0.7 ? 'var(--rd)' : l.score >= 0.4 ? 'var(--yl)' : 'var(--t2)';
-        return `<tr>
-          <td>${l.id}</td>
-          <td><span class="tag ${PLAT_TAG[l.platform]||''}">${PLAT_LABELS[l.platform]||l.platform}</span></td>
-          <td>${l.author_name||'-'}</td>
-          <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis">${l.comment_content}</td>
-          <td><div class="score-bar"><span>${(l.score||0).toFixed(2)}</span><div class="score-fill"><div style="width:${(l.score||0)*100}%;background:${sc}"></div></div></div></td>
-          <td>${l.intent||'-'}</td>
-          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${l.reply_content||'-'}</td>
-          <td>${l.created_at ? new Date(l.created_at).toLocaleString('zh-CN') : '-'}</td>
-        </tr>`;
-      }).join('') || '<tr><td colspan="8" style="text-align:center;color:var(--t2)">暂无日志</td></tr>';
-      renderPagination('logs-pagination', data, (p) => { logsPage = p; loadLogs(); });
-    }
+// --- Accounts ---
+async function loadAccounts() {
+  const body = document.getElementById('accTableBody');
+  const loading = document.getElementById('accLoading');
+  const empty = document.getElementById('accEmpty');
+  body.innerHTML = ''; loading.style.display = 'flex'; empty.style.display = 'none';
+  try {
+    const res = await api('/api/v1/accounts');
+    let data = Array.isArray(res) ? res : (res.data || []);
+    const fp = document.getElementById('accFilterPlatform').value;
+    if (fp) data = data.filter(a => a.platform === fp);
+    loading.style.display = 'none';
+    if (!data.length) { empty.style.display = 'block'; return; }
+    body.innerHTML = data.map(a => `<tr>
+      <td>${platformTag(a.platform)}</td>
+      <td style="font-weight:510;color:var(--text-primary)">${a.account_name || a.name || '-'}</td>
+      <td class="mono">${a.account_id || a.platform_account_id || '-'}</td>
+      <td>${statusTag(a.status || 'active')}</td>
+      <td class="text-muted">${timeStr(a.created_at)}</td>
+      <td><button class="btn btn-secondary btn-sm" onclick='editAccount(${JSON.stringify(a)})'>编辑</button> <button class="btn btn-danger btn-sm" onclick="deleteAccount('${a.id}')">删除</button></td>
+    </tr>`).join('');
+  } catch (e) { loading.style.display = 'none'; toast('加载账号失败', 'error'); }
+}
 
-    function clearLogFilters() {
-      ['log-filter-platform','log-filter-intent','log-filter-author','log-filter-start','log-filter-end'].forEach(id => document.getElementById(id).value = '');
-      logsPage = 1; loadLogs();
-    }
+function openAccountModal(data) {
+  document.getElementById('accModalTitle').textContent = data ? '编辑账号' : '添加账号';
+  document.getElementById('accEditId').value = data?.id || '';
+  document.getElementById('accFormPlatform').value = data?.platform || 'douyin';
+  document.getElementById('accFormName').value = data?.account_name || data?.name || '';
+  document.getElementById('accFormId').value = data?.account_id || data?.platform_account_id || '';
+  document.getElementById('accFormStatus').value = data?.status || 'active';
+  document.getElementById('accountModal').classList.add('show');
+}
 
-    // ─── Replies ───
-    let repliesPage = 1;
-    async function loadReplies() {
-      const params = new URLSearchParams({page: repliesPage, page_size: 20});
-      const platform = document.getElementById('reply-filter-platform').value;
-      const status = document.getElementById('reply-filter-status').value;
-      if (platform) params.set('platform', platform);
-      if (status) params.set('status', status);
-      const data = await api('/replies?' + params);
-      const tbody = document.getElementById('replies-tbody');
-      tbody.innerHTML = data.replies.map(r => `<tr>
-        <td>${r.id}</td>
-        <td><span class="tag ${PLAT_TAG[r.platform]||''}">${PLAT_LABELS[r.platform]||r.platform}</span></td>
-        <td>${r.comment_id||'-'}</td>
-        <td style="max-width:300px;overflow:hidden;text-overflow:ellipsis">${r.reply_content}</td>
-        <td><span class="tag tag-${r.status}">${STATUS_LABELS[r.status]||r.status}</span></td>
-        <td style="color:var(--rd)">${r.error_msg||'-'}</td>
-        <td>${r.created_at ? new Date(r.created_at).toLocaleString('zh-CN') : '-'}</td>
-      </tr>`).join('') || '<tr><td colspan="7" style="text-align:center;color:var(--t2)">暂无回复记录</td></tr>';
-      renderPagination('replies-pagination', data, (p) => { repliesPage = p; loadReplies(); });
-    }
+function closeAccountModal() { document.getElementById('accountModal').classList.remove('show'); }
 
-    // ─── Pagination ───
-    function renderPagination(containerId, data, callback) {
-      const container = document.getElementById(containerId);
-      const total = data.total || 0;
-      const pageSize = data.page_size || 20;
-      const current = data.page || 1;
-      const pages = Math.ceil(total / pageSize);
-      if (pages <= 1) { container.innerHTML = ''; return; }
-      let html = `<div>共 ${total} 条</div><div class="page-btns">`;
-      for (let i = 1; i <= Math.min(pages, 10); i++) {
-        html += `<div class="page-btn ${i===current?'active':''}" onclick="this._cb(${i})">${i}</div>`;
-      }
-      html += '</div>';
-      container.innerHTML = html;
-      container.querySelectorAll('.page-btn').forEach(btn => { btn._cb = callback; });
-    }
+function editAccount(a) { openAccountModal(a); }
 
-    // ─── Demo ───
-    async function runDemo() {
-      if (!confirm('运行演示？将用 mock 数据生成分析记录和潜客。')) return;
-      const data = await api('/demo/run', {method:'POST'});
-      alert(`演示完成\n评论: ${data.total_comments}\n潜客: ${data.leads_found}\n回复: ${data.replies_generated}`);
-      loadDashboard();
-    }
+async function saveAccount() {
+  const id = document.getElementById('accEditId').value;
+  const payload = {
+    platform: document.getElementById('accFormPlatform').value,
+    account_name: document.getElementById('accFormName').value,
+    account_id: document.getElementById('accFormId').value,
+    status: document.getElementById('accFormStatus').value,
+  };
+  try {
+    if (id) await api(`/api/v1/accounts/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+    else await api('/api/v1/accounts', { method: 'POST', body: JSON.stringify(payload) });
+    toast(id ? '账号已更新' : '账号已添加');
+    closeAccountModal(); loadAccounts();
+  } catch (e) { toast('保存失败', 'error'); }
+}
 
-    // ─── Init ───
-    loadDashboard();
-  </script>
+async function deleteAccount(id) {
+  if (!confirm('确定删除此账号？')) return;
+  try { await api(`/api/v1/accounts/${id}`, { method: 'DELETE' }); toast('已删除'); loadAccounts(); }
+  catch (e) { toast('删除失败', 'error'); }
+}
+
+// --- Leads ---
+async function loadLeads(page) {
+  if (page) leadPage = page;
+  const body = document.getElementById('leadTableBody');
+  const loading = document.getElementById('leadLoading');
+  const empty = document.getElementById('leadEmpty');
+  body.innerHTML = ''; loading.style.display = 'flex'; empty.style.display = 'none';
+  const params = new URLSearchParams({ page: leadPage, page_size: PAGE_SIZE });
+  const fp = document.getElementById('leadFilterPlatform').value;
+  const fs = document.getElementById('leadFilterStatus').value;
+  const fsc = document.getElementById('leadFilterScore').value;
+  const fstart = document.getElementById('leadFilterStart').value;
+  const fend = document.getElementById('leadFilterEnd').value;
+  if (fp) params.set('platform', fp);
+  if (fs) params.set('status', fs);
+  if (fsc) params.set('min_score', fsc);
+  if (fstart) params.set('start_time', fstart);
+  if (fend) params.set('end_time', fend);
+  try {
+    const res = await api(`/api/v1/leads?${params}`);
+    const data = Array.isArray(res) ? res : (res.data || []);
+    const total = res.total ?? res.pagination?.total ?? data.length;
+    loading.style.display = 'none';
+    if (!data.length) { empty.style.display = 'block'; document.getElementById('leadPagination').innerHTML = ''; return; }
+    body.innerHTML = data.map(l => `<tr>
+      <td>${platformTag(l.platform)}</td>
+      <td style="color:var(--text-primary)">${l.author_name || '-'}</td>
+      <td title="${(l.content || '').replace(/"/g, '&quot;')}">${truncate(l.content, 40)}</td>
+      <td>${scoreBar(l.score ?? 0)}</td>
+      <td>${statusTag(l.status || 'pending')}</td>
+      <td class="text-muted">${timeStr(l.created_at || l.found_at)}</td>
+      <td>
+        <select class="btn-sm" style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-btn);padding:3px 6px;font-size:12px;color:var(--text-body)" onchange="updateLeadStatus('${l.id}',this.value)">
+          <option value="pending" ${l.status==='pending'?'selected':''}>待处理</option>
+          <option value="replied" ${l.status==='replied'?'selected':''}>已回复</option>
+          <option value="ignored" ${l.status==='ignored'?'selected':''}>已忽略</option>
+        </select>
+      </td>
+    </tr>`).join('');
+    paginationHTML('leadPagination', total, leadPage, PAGE_SIZE, 'loadLeads');
+  } catch (e) { loading.style.display = 'none'; toast('加载线索失败', 'error'); }
+}
+
+async function updateLeadStatus(id, status) {
+  try { await api(`/api/v1/leads/${id}/status?status=${status}`, { method: 'PUT' }); toast('状态已更新'); loadLeads(); }
+  catch (e) { toast('更新失败', 'error'); }
+}
+
+function exportLeads() {
+  const params = new URLSearchParams();
+  const fp = document.getElementById('leadFilterPlatform').value;
+  const fs = document.getElementById('leadFilterStatus').value;
+  if (fp) params.set('platform', fp);
+  if (fs) params.set('status', fs);
+  window.open(`/api/v1/leads/export?${params}`, '_blank');
+}
+
+// --- Logs ---
+async function loadLogs(page) {
+  if (page) logPage = page;
+  const body = document.getElementById('logTableBody');
+  const loading = document.getElementById('logLoading');
+  const empty = document.getElementById('logEmpty');
+  body.innerHTML = ''; loading.style.display = 'flex'; empty.style.display = 'none';
+  const params = new URLSearchParams({ page: logPage, page_size: PAGE_SIZE });
+  const fp = document.getElementById('logFilterPlatform').value;
+  const fi = document.getElementById('logFilterIntent').value;
+  const fa = document.getElementById('logFilterAuthor').value;
+  const fstart = document.getElementById('logFilterStart').value;
+  const fend = document.getElementById('logFilterEnd').value;
+  if (fp) params.set('platform', fp);
+  if (fi) params.set('intent', fi);
+  if (fa) params.set('author_name', fa);
+  if (fstart) params.set('start_time', fstart);
+  if (fend) params.set('end_time', fend);
+  try {
+    const res = await api(`/api/v1/logs?${params}`);
+    const data = Array.isArray(res) ? res : (res.data || []);
+    const total = res.total ?? res.pagination?.total ?? data.length;
+    loading.style.display = 'none';
+    if (!data.length) { empty.style.display = 'block'; document.getElementById('logPagination').innerHTML = ''; return; }
+    body.innerHTML = data.map(l => `<tr>
+      <td>${platformTag(l.platform)}</td>
+      <td style="color:var(--text-primary)">${l.author_name || '-'}</td>
+      <td title="${(l.content || l.original_text || '').replace(/"/g, '&quot;')}">${truncate(l.content || l.original_text, 50)}</td>
+      <td><span class="tag" style="background:rgba(94,106,210,0.12);color:var(--accent)">${INTENTS[l.intent] || l.intent || '-'}</span></td>
+      <td>${scoreBar(l.score ?? l.sentiment_score ?? 0)}</td>
+      <td class="text-muted">${timeStr(l.created_at || l.analyzed_at)}</td>
+    </tr>`).join('');
+    paginationHTML('logPagination', total, logPage, PAGE_SIZE, 'loadLogs');
+  } catch (e) { loading.style.display = 'none'; toast('加载日志失败', 'error'); }
+}
+
+// --- Replies ---
+async function loadReplies(page) {
+  if (page) replyPage = page;
+  const body = document.getElementById('replyTableBody');
+  const loading = document.getElementById('replyLoading');
+  const empty = document.getElementById('replyEmpty');
+  body.innerHTML = ''; loading.style.display = 'flex'; empty.style.display = 'none';
+  const params = new URLSearchParams({ page: replyPage, page_size: PAGE_SIZE });
+  const fp = document.getElementById('replyFilterPlatform').value;
+  const fs = document.getElementById('replyFilterStatus').value;
+  if (fp) params.set('platform', fp);
+  if (fs) params.set('status', fs);
+  try {
+    const res = await api(`/api/v1/replies?${params}`);
+    const data = Array.isArray(res) ? res : (res.data || []);
+    const total = res.total ?? res.pagination?.total ?? data.length;
+    loading.style.display = 'none';
+    if (!data.length) { empty.style.display = 'block'; document.getElementById('replyPagination').innerHTML = ''; return; }
+    body.innerHTML = data.map(r => `<tr>
+      <td>${platformTag(r.platform)}</td>
+      <td style="color:var(--text-primary)">${r.author_name || r.target_author || '-'}</td>
+      <td title="${(r.reply_content || r.content || '').replace(/"/g, '&quot;')}">${truncate(r.reply_content || r.content, 50)}</td>
+      <td>${statusTag(r.status || 'sent')}</td>
+      <td class="text-muted">${timeStr(r.created_at || r.sent_at)}</td>
+    </tr>`).join('');
+    paginationHTML('replyPagination', total, replyPage, PAGE_SIZE, 'loadReplies');
+  } catch (e) { loading.style.display = 'none'; toast('加载回复失败', 'error'); }
+}
+
+// --- Scheduler ---
+async function checkHealth() {
+  try {
+    const r = await api('/api/v1/health');
+    document.getElementById('healthBadge').textContent = '● 运行中';
+    document.getElementById('healthBadge').style.color = 'var(--green)';
+  } catch (e) {
+    document.getElementById('healthBadge').textContent = '● 离线';
+    document.getElementById('healthBadge').style.color = 'var(--red)';
+  }
+}
+
+async function loadSchedulerStatus() {
+  try {
+    const r = await api('/api/v1/scheduler/status');
+    const running = r.running ?? r.status === 'running' ?? false;
+    document.getElementById('schedDot').className = `status-dot ${running ? 'on' : 'off'}`;
+    document.getElementById('schedLabel').textContent = running ? '调度器运行中' : '调度器已停止';
+  } catch (e) {}
+}
+
+async function schedAction(action) {
+  try {
+    await api(`/api/v1/scheduler/${action}`, { method: 'POST' });
+    toast(action === 'start' ? '调度器已启动' : action === 'stop' ? '调度器已停止' : '手动执行完成');
+    loadSchedulerStatus();
+  } catch (e) { toast('操作失败', 'error'); }
+}
+
+async function runDemo() {
+  try { await api('/api/v1/demo/run', { method: 'POST' }); toast('Demo 已运行'); if (currentPage === 'dashboard') loadDashboard(); }
+  catch (e) { toast('Demo 运行失败', 'error'); }
+}
+
+// --- Init ---
+document.addEventListener('DOMContentLoaded', () => {
+  checkHealth();
+  loadSchedulerStatus();
+  loadDashboard();
+});
+</script>
 </body>
 </html>
