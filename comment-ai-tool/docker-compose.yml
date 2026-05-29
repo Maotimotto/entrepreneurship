@@ -1,25 +1,53 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  comment-ai:
-    build: .
-    container_name: comment-ai
-    ports:
-      - "8000:8000"
-    volumes:
-      - comment-ai-data:/data
-    environment:
-      - AI_PROVIDER=${AI_PROVIDER:-openai}
-      - AI_API_KEY=${AI_API_KEY:-}
-      - AI_MODEL=${AI_MODEL:-gpt-4o-mini}
-      - AI_BASE_URL=${AI_BASE_URL:-https://api.openai.com/v1}
-      - COMMENT_AI_DB=/data/comment_ai.db
+  # ═══ MySQL ═══
+  mysql:
+    image: mysql:8.0
+    container_name: comment-ai-mysql
     restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-comment_ai_pass}
+      MYSQL_DATABASE: comment_ai
+      MYSQL_CHARACTER_SET_SERVER: utf8mb4
+      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "python", "-c", "import httpx; r=httpx.get('http://localhost:8000/api/v1/health'); assert r.json()['status']=='ok'"]
-      interval: 30s
-      timeout: 3s
-      retries: 3
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ═══ 评论AI应用 ═══
+  app:
+    build: .
+    container_name: comment-ai-app
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_URL: mysql+aiomysql://root:${MYSQL_ROOT_PASSWORD:-comment_ai_pass}@mysql:3306/comment_ai
+      AI_PROVIDER: ${AI_PROVIDER:-openai}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-gpt-4o-mini}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com/v1}
+      DOUYIN_ACCESS_TOKEN: ${DOUYIN_ACCESS_TOKEN:-}
+      XHS_COOKIE: ${XHS_COOKIE:-}
+      WECHAT_APPID: ${WECHAT_APPID:-}
+      WECHAT_SECRET: ${WECHAT_SECRET:-}
+      BILIBILI_COOKIE: ${BILIBILI_COOKIE:-}
+      BILIBILI_CSRF: ${BILIBILI_CSRF:-}
+      CHECK_INTERVAL_SECONDS: ${CHECK_INTERVAL_SECONDS:-300}
+      MIN_LEAD_SCORE: ${MIN_LEAD_SCORE:-0.6}
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    volumes:
+      - app_data:/app/data
 
 volumes:
-  comment-ai-data:
+  mysql_data:
+  app_data:
