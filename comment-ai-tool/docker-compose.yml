@@ -1,7 +1,8 @@
-version: "3.8"
+# comment-ai-tool 独立部署
+# 用法: docker compose up -d
+# 与 MoneyPrinterTurbo 联合部署: 用上层 ~/projects/docker-compose.yml
 
 services:
-  # ═══ MySQL ═══
   mysql:
     image: mysql:8.0
     container_name: comment-ai-mysql
@@ -21,7 +22,6 @@ services:
       timeout: 5s
       retries: 5
 
-  # ═══ 评论AI应用 ═══
   app:
     build: .
     container_name: comment-ai-app
@@ -30,17 +30,13 @@ services:
       mysql:
         condition: service_healthy
     environment:
-      DB_URL: mysql+aiomysql://root:${MYSQL_ROOT_PASSWORD:-comment_ai_pass}@mysql:3306/comment_ai
+      DB_URL: mysql+aiomysql://root:***@mysql:3306/comment_ai
       AI_PROVIDER: ${AI_PROVIDER:-openai}
       AI_API_KEY: ${AI_API_KEY:-}
       AI_MODEL: ${AI_MODEL:-gpt-4o-mini}
       AI_BASE_URL: ${AI_BASE_URL:-https://api.openai.com/v1}
-      DOUYIN_ACCESS_TOKEN: ${DOUYIN_ACCESS_TOKEN:-}
-      XHS_COOKIE: ${XHS_COOKIE:-}
-      WECHAT_APPID: ${WECHAT_APPID:-}
-      WECHAT_SECRET: ${WECHAT_SECRET:-}
-      BILIBILI_COOKIE: ${BILIBILI_COOKIE:-}
-      BILIBILI_CSRF: ${BILIBILI_CSRF:-}
+      MPT_BASE_URL: ${MPT_BASE_URL:-http://localhost:8080}
+      MPT_ENABLED: ${MPT_ENABLED:-false}
       CHECK_INTERVAL_SECONDS: ${CHECK_INTERVAL_SECONDS:-300}
       MIN_LEAD_SCORE: ${MIN_LEAD_SCORE:-0.6}
     ports:

@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     bilibili_cookie: str = ""
     bilibili_csrf: str = ""
 
+    # === 抖音 Cookie ===
+    douyin_cookie: str = ""
+
     # === MoneyPrinterTurbo ===
     mpt_base_url: str = "http://localhost:8080"
     mpt_enabled: bool = False
